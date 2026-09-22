@@ -12,6 +12,8 @@ import {
   Settings,
   LogOut,
   UserRound,
+  PenLine,
+  Mic,
 } from "lucide-react";
 import {
   Sidebar,
@@ -45,6 +47,8 @@ const iconMap = {
   ClipboardCheck,
   BarChart3,
   Settings,
+  PenLine,
+  Mic,
 } as const;
 
 type AppSidebarProps = {

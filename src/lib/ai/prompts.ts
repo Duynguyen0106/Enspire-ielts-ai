@@ -153,6 +153,72 @@ export function buildPlacementSummaryPrompt(input: {
   ].join("\n");
 }
 
+export const WRITING_EXAMINER_SYSTEM = `You are a certified IELTS Writing examiner with 15 years of experience. You score strictly using the official IELTS Writing band descriptors (Task Achievement/Task Response, Coherence & Cohesion, Lexical Resource, Grammatical Range & Accuracy). You never inflate. You always return valid JSON matching the schema. All feedback fields in Vietnamese for the learner. Corrections show original → corrected → explanationVi. You cite specific sentences from the essay, never vague generalities.`;
+
+export const SPEAKING_EXAMINER_SYSTEM = `You are a certified IELTS Speaking examiner. You score using the official four criteria: Fluency & Coherence, Lexical Resource, Grammatical Range & Accuracy, Pronunciation. You receive the transcript with word-level timestamps so you can estimate fluency (words per minute, pauses, filler words). Pronunciation is ESTIMATED from transcript patterns and word-level confidence — always state this limitation in Vietnamese. Return valid JSON matching the schema. Feedback in Vietnamese.`;
+
+export const MODEL_ANSWER_SYSTEM = `You write IELTS model answers at three target bands: 6.0, 7.5, and 9.0. The band 6.0 answer is competent but has clear errors and limited range. The 7.5 answer is strong with minor slips. The 9.0 answer is fully developed, precise, and natural. For each, add 3–5 Vietnamese notes explaining what makes it that band. Return JSON with keys: band6, band75, band9 — each an object { text: string, notesVi: string[] }.`;
+
+export function buildWritingGymEvalPrompt(input: {
+  text: string;
+  taskPrompt: string;
+  taskType: string;
+  wordCount: number;
+  minWords: number;
+  level: number;
+}): string {
+  return [
+    "Evaluate this IELTS Writing response strictly.",
+    `Task type: ${input.taskType}`,
+    `Learner level: ${input.level}/9`,
+    `Task prompt: ${input.taskPrompt}`,
+    `Word count: ${input.wordCount} (minimum: ${input.minWords})`,
+    input.wordCount < input.minWords
+      ? "IMPORTANT: under minimum word count — lower Task Achievement and set wordCountNote in Vietnamese."
+      : "",
+    "Learner essay:",
+    input.text,
+    "Return JSON matching WritingEvaluation schema with evidenceQuote for each criterion.",
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
+export function buildSpeakingGymEvalPrompt(input: {
+  transcript: string;
+  questions: string[];
+  level: number;
+  wpm: number;
+  pauseCount: number;
+  fillerCount: number;
+  sessionType: string;
+}): string {
+  return [
+    "Evaluate this IELTS Speaking session from transcripts and fluency metrics.",
+    `Session type: ${input.sessionType}`,
+    `Learner level: ${input.level}/9`,
+    `Questions: ${JSON.stringify(input.questions)}`,
+    `Metrics: WPM=${input.wpm}, pauses=${input.pauseCount}, fillers=${input.fillerCount}`,
+    "Combined transcript:",
+    input.transcript,
+    "Pronunciation must include noteVi about transcript-only estimation.",
+    "Return JSON matching SpeakingEvaluation schema including recommendedDrills.",
+  ].join("\n");
+}
+
+export function buildModelAnswerPrompt(input: {
+  taskType: string;
+  prompt: string;
+  level: number;
+}): string {
+  return [
+    `Write IELTS ${input.taskType} model answers at bands 6.0, 7.5, and 9.0.`,
+    `Learner approximate level context: ${input.level}/9`,
+    `Prompt: ${input.prompt}`,
+    "Return JSON: { band6:{text,notesVi[]}, band75:{text,notesVi[]}, band9:{text,notesVi[]} }.",
+  ].join("\n");
+}
+
 export function buildPracticeGeneratePrompt(input: {
   skill: "LISTENING" | "READING";
   level: number;

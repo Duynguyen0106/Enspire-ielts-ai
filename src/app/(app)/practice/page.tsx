@@ -30,18 +30,18 @@ const practices = [
     desc: "Luyện tập ngẫu nhiên — đoạn văn + câu hỏi.",
   },
   {
-    href: "/practice/writing",
+    href: "/writing",
     title: "Writing",
     titleVi: "Viết",
     icon: PenLine,
-    desc: "Coming soon — scratch pad sẽ có ở Phase 4.",
+    desc: "Task 1 & Task 2 — chấm AI, bài mẫu 3 band, lịch sử.",
   },
   {
-    href: "/practice/speaking",
+    href: "/speaking",
     title: "Speaking",
     titleVi: "Nói",
     icon: Mic,
-    desc: "Coming soon — scratch pad sẽ có ở Phase 4.",
+    desc: "Luyện từng phần hoặc thi thử đầy đủ với Whisper + AI.",
   },
 ] as const;
 

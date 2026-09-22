@@ -82,6 +82,29 @@ export function rateLimitExceededResponse() {
   );
 }
 
+/** Daily window limiter (memory + Upstash when available). */
+export async function rateLimitUserDaily(
+  userId: string,
+  bucket: string,
+  limit: number
+): Promise<{ success: boolean; remaining: number; reset: number }> {
+  const key = `day:${bucket}:${userId}`;
+  const windowMs = 24 * 60 * 60 * 1000;
+  const redis = getRedis();
+  if (!redis) {
+    return memoryLimit(key, limit, windowMs);
+  }
+  const count = await redis.incr(key);
+  if (count === 1) {
+    await redis.expire(key, Math.ceil(windowMs / 1000));
+  }
+  return {
+    success: count <= limit,
+    remaining: Math.max(0, limit - count),
+    reset: Date.now() + windowMs,
+  };
+}
+
 export function getRedis(): Redis | null {
   const url = process.env.UPSTASH_REDIS_REST_URL?.trim();
   const token = process.env.UPSTASH_REDIS_REST_TOKEN?.trim();

@@ -17,6 +17,8 @@ export const NAV_ITEMS = [
   { title: "Lộ trình", href: "/levels", icon: "Route" },
   { title: "Bài học", href: "/lessons", icon: "BookOpen" },
   { title: "Luyện tập", href: "/practice", icon: "Dumbbell" },
+  { title: "Writing", href: "/writing", icon: "PenLine" },
+  { title: "Speaking", href: "/speaking", icon: "Mic" },
   { title: "Bài kiểm tra", href: "/tests", icon: "ClipboardCheck" },
   { title: "Kết quả", href: "/results", icon: "BarChart3" },
   { title: "Cài đặt", href: "/settings", icon: "Settings" },
