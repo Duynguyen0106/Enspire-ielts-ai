@@ -16,6 +16,7 @@ import {
 } from "@/lib/ai/evaluate-speaking";
 import { generatePlacementSummary } from "@/lib/ai/placement-summary";
 import { estimateFluencyFromTranscript, storeAudio, decodeBase64Audio } from "@/lib/audio";
+import { grantUnlock } from "@/lib/unlock";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -302,6 +303,10 @@ export async function POST(req: Request) {
       },
     });
   });
+
+  for (let n = 1; n <= recommendedLevel; n++) {
+    await grantUnlock(user.id, n, "PLACEMENT");
+  }
 
   return NextResponse.json({ placementResultId: placementResult.id });
 }

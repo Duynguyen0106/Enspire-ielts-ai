@@ -29,6 +29,20 @@ enum AttemptStatus {
   IN_PROGRESS
   SUBMITTED
   SCORED
+  ABANDONED
+}
+
+enum ScoringStatus {
+  NOT_STARTED
+  SCORING
+  SCORED
+  FAILED
+}
+
+enum UnlockSource {
+  PLACEMENT
+  TEST_PASS
+  ADMIN
 }
 
 enum TutorRole {
@@ -78,6 +92,7 @@ model User {
   tutorConversations TutorConversation[]
   writingSubmissions WritingSubmission[]
   speakingSessions   SpeakingSession[]
+  levelUnlocks       LevelUnlock[]
 }
 
 model Account {
@@ -116,16 +131,18 @@ model VerificationToken {
 }
 
 model Profile {
-  id                 String   @id @default(cuid())
-  userId             String   @unique
+  id                 String    @id @default(cuid())
+  userId             String    @unique
   displayName        String?
-  nativeLanguage     String   @default("vi")
+  nativeLanguage     String    @default("vi")
   targetBand         Float?
-  currentLevel       Int      @default(1)
-  placementCompleted Boolean  @default(false)
+  currentLevel       Int       @default(1)
+  placementCompleted Boolean   @default(false)
   weakSkills         SkillName[]
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  graduatedAt        DateTime?
+  bestFullTestBand   Float?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
@@ -140,6 +157,7 @@ model Level {
   lessons  Lesson[]
   tests    Test[]
   progress Progress[]
+  unlocks  LevelUnlock[]
 }
 
 model Skill {
@@ -187,16 +205,20 @@ model Exercise {
 }
 
 model Test {
-  id          String    @id @default(cuid())
-  levelId     String?
-  type        TestType
-  title       String
-  durationMin Int
-  publishedAt DateTime?
+  id               String    @id @default(cuid())
+  levelId          String?
+  type             TestType
+  title            String
+  durationMin      Int
+  publishedAt      DateTime?
+  /// { minOverallBand: number, minSkillBand: number }
+  passingRulesJson Json?
 
   level    Level?         @relation(fields: [levelId], references: [id], onDelete: SetNull)
   sections TestSection[]
   attempts TestAttempt[]
+
+  @@unique([levelId, type])
 }
 
 model TestSection {
@@ -208,9 +230,10 @@ model TestSection {
   instructionsVi String?
   metadataJson   Json?
 
-  test      Test       @relation(fields: [testId], references: [id], onDelete: Cascade)
-  skill     Skill      @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  test      Test                  @relation(fields: [testId], references: [id], onDelete: Cascade)
+  skill     Skill                 @relation(fields: [skillId], references: [id], onDelete: Cascade)
   questions Question[]
+  progress  TestSectionProgress[]
 
   @@unique([testId, order])
 }
@@ -231,20 +254,54 @@ model Question {
 }
 
 model TestAttempt {
-  id           String        @id @default(cuid())
-  userId       String
-  testId       String
-  startedAt    DateTime      @default(now())
-  submittedAt  DateTime?
-  status       AttemptStatus @default(IN_PROGRESS)
-  overallBand  Float?
-  rawScoreJson Json?
+  id              String         @id @default(cuid())
+  userId          String
+  testId          String
+  startedAt       DateTime       @default(now())
+  submittedAt     DateTime?
+  status          AttemptStatus  @default(IN_PROGRESS)
+  scoringStatus   ScoringStatus  @default(NOT_STARTED)
+  scoringError    String?
+  scoringRetries  Int            @default(0)
+  passed          Boolean?
+  unlockGranted   Boolean        @default(false)
+  cooldownUntil   DateTime?
+  overallBand     Float?
+  rawScoreJson    Json?
 
-  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  test            Test             @relation(fields: [testId], references: [id], onDelete: Cascade)
+  user            User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  test            Test                  @relation(fields: [testId], references: [id], onDelete: Cascade)
   answers         Answer[]
   feedback        AIFeedback[]
   placementResult PlacementResult?
+  sectionProgress TestSectionProgress[]
+}
+
+model LevelUnlock {
+  id         String       @id @default(cuid())
+  userId     String
+  levelId    String
+  unlockedAt DateTime     @default(now())
+  unlockedBy UnlockSource
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  level Level @relation(fields: [levelId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, levelId])
+}
+
+model TestSectionProgress {
+  id           String    @id @default(cuid())
+  attemptId    String
+  sectionId    String
+  startedAt    DateTime?
+  submittedAt  DateTime?
+  timeSpentSec Int?
+
+  attempt TestAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  section TestSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+
+  @@unique([attemptId, sectionId])
 }
 
 model Answer {

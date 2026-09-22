@@ -13,6 +13,10 @@ type LevelCardProps = {
   locked: boolean;
   isCurrent: boolean;
   skillProgress: Record<SkillName, number>;
+  lessonsDone?: number;
+  lessonsTotal?: number;
+  checkpointsDone?: number;
+  fullTestStatus?: "locked" | "available" | "passed" | "failed" | "none";
 };
 
 const skills: SkillName[] = ["LISTENING", "READING", "WRITING", "SPEAKING"];
@@ -24,6 +28,10 @@ export function LevelCard({
   locked,
   isCurrent,
   skillProgress,
+  lessonsDone,
+  lessonsTotal,
+  checkpointsDone,
+  fullTestStatus,
 }: LevelCardProps) {
   const content = (
     <div
@@ -50,6 +58,22 @@ export function LevelCard({
       {descriptionVi ? (
         <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">
           {descriptionVi}
+        </p>
+      ) : null}
+      {lessonsTotal != null ? (
+        <p className="mt-2 text-xs text-muted-foreground">
+          Bài học {lessonsDone ?? 0}/{lessonsTotal} · Checkpoint {checkpointsDone ?? 0}/4
+          {fullTestStatus && fullTestStatus !== "none"
+            ? ` · Thi: ${
+                fullTestStatus === "passed"
+                  ? "Đạt"
+                  : fullTestStatus === "failed"
+                    ? "Chưa đạt"
+                    : fullTestStatus === "available"
+                      ? "Sẵn sàng"
+                      : "Khóa"
+              }`
+            : ""}
         </p>
       ) : null}
       <div className="mt-4 flex justify-between gap-1">

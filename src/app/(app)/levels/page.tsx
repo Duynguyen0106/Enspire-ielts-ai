@@ -38,11 +38,41 @@ export default async function LevelsPage() {
         )
       ) as Record<SkillName, number>;
 
+      const lessonStats = await Promise.all(
+        skills.map((skill) => computeLessonProgress(user.id, level.number, skill))
+      );
+      const lessonsDone = lessonStats.reduce((s, p) => s + p.completed, 0);
+      const lessonsTotal = lessonStats.reduce((s, p) => s + p.total, 0);
+      const checkpointsDone = lessonStats.filter((p) => p.checkpointPassed).length;
+
+      const fullTest = await prisma.test.findFirst({
+        where: { type: "FULL_LEVEL", levelId: level.id },
+        include: {
+          attempts: {
+            where: { userId: user.id, status: "SCORED" },
+            orderBy: { startedAt: "desc" },
+            take: 1,
+          },
+        },
+      });
+      let fullTestStatus: "locked" | "available" | "passed" | "failed" | "none" =
+        "none";
+      if (fullTest) {
+        if (!unlocked && level.number !== currentLevel) fullTestStatus = "locked";
+        else if (fullTest.attempts[0]?.passed === true) fullTestStatus = "passed";
+        else if (fullTest.attempts[0]?.passed === false) fullTestStatus = "failed";
+        else fullTestStatus = "available";
+      }
+
       return {
         level,
         locked: !unlocked && level.number !== currentLevel,
         isCurrent: level.number === currentLevel,
         skillProgress,
+        lessonsDone,
+        lessonsTotal,
+        checkpointsDone,
+        fullTestStatus,
       };
     })
   );
@@ -56,19 +86,23 @@ export default async function LevelsPage() {
             9 cấp độ IELTS
           </h2>
           <p className="mt-1 text-muted-foreground">
-            Mỗi level có 4 kỹ năng · 3 bài học + 1 checkpoint.
+            Mỗi level có 4 kỹ năng · 3 bài học + 1 checkpoint · 1 bài thi cấp độ.
           </p>
         </div>
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {cards.map(({ level, locked, isCurrent, skillProgress }) => (
+          {cards.map((c) => (
             <LevelCard
-              key={level.id}
-              number={level.number}
-              titleVi={level.titleVi}
-              descriptionVi={level.descriptionVi}
-              locked={locked && !isCurrent}
-              isCurrent={isCurrent}
-              skillProgress={skillProgress}
+              key={c.level.id}
+              number={c.level.number}
+              titleVi={c.level.titleVi}
+              descriptionVi={c.level.descriptionVi}
+              locked={c.locked && !c.isCurrent}
+              isCurrent={c.isCurrent}
+              skillProgress={c.skillProgress}
+              lessonsDone={c.lessonsDone}
+              lessonsTotal={c.lessonsTotal}
+              checkpointsDone={c.checkpointsDone}
+              fullTestStatus={c.fullTestStatus}
             />
           ))}
         </div>

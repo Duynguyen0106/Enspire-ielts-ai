@@ -48,10 +48,17 @@ describe("levelFromBand", () => {
   });
 });
 
-describe("rawToBand", () => {
-  it("maps 10-item raw scores into half-step bands", () => {
-    assert.equal(rawToBand("LISTENING", 0, 10), 0);
-    assert.equal(rawToBand("READING", 10, 10), 9.0);
-    assert.equal(rawToBand("LISTENING", 5, 10), 5.0);
+describe("rawToBand20", () => {
+  it("maps 20-item raw scores", async () => {
+    const { rawToBand20, evaluatePassing } = await import("./ielts-scoring");
+    assert.equal(rawToBand20("LISTENING", 0), 0);
+    assert.equal(rawToBand20("READING", 20), 9.0);
+    assert.equal(rawToBand20("LISTENING", 10), 5.0);
+    const r = evaluatePassing(
+      { listening: 5, reading: 5, writing: 5, speaking: 4 },
+      { minOverallBand: 5, minSkillBand: 4.5 }
+    );
+    assert.equal(r.passed, false);
+    assert.ok(r.failedSkills.includes("SPEAKING"));
   });
 });
