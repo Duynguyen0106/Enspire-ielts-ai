@@ -47,6 +47,13 @@ export default async function WritingSubmissionPage({ params }: Props) {
   }) ?? {};
   const under =
     submission.wordCount < WRITING_TASK_META[submission.taskType].minWords;
+  const wordCountNote =
+    typeof (ev.criteriaJson as { wordCountNote?: string }).wordCountNote ===
+    "string"
+      ? (ev.criteriaJson as { wordCountNote?: string }).wordCountNote
+      : under
+        ? `Bài dưới mức tối thiểu (${submission.wordCount}/${WRITING_TASK_META[submission.taskType].minWords} từ).`
+        : null;
 
   return (
     <>
@@ -61,6 +68,11 @@ export default async function WritingSubmissionPage({ params }: Props) {
               {submission.wordCount} từ · {Math.round(submission.timeSpentSec / 60)} phút
               {under ? " · ⚠ Dưới mức tối thiểu" : ""}
             </p>
+            {wordCountNote ? (
+              <p className="mt-2 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                {wordCountNote}
+              </p>
+            ) : null}
             <AiDisclaimer className="mt-2 text-xs text-muted-foreground" />
           </div>
           <BandBadge band={ev.overallBand} />

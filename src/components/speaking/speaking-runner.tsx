@@ -226,7 +226,13 @@ export function SpeakingRunner({ mode, part, level }: SpeakingRunnerProps) {
 
       {!lastTranscript ? (
         <div className="space-y-2 rounded-lg border p-3">
-          <p className="text-sm font-medium">Chế độ gõ transcript (nếu Whisper lỗi)</p>
+          <p className="text-sm font-medium">
+            Chế độ gõ transcript (khi không dùng được micro hoặc Whisper lỗi)
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Nếu trình duyệt từ chối quyền micro, hãy gõ câu trả lời vào đây để
+            tiếp tục phiên nói.
+          </p>
           <Input
             value={typed}
             onChange={(e) => setTyped(e.target.value)}

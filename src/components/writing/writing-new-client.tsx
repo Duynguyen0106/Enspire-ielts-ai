@@ -47,6 +47,10 @@ export function WritingNewClient({ taskType, level }: WritingNewClientProps) {
     [taskType, selected?.id]
   );
 
+  const count = wordCount(essay);
+  const underMin = count < meta.minWords;
+  const canSubmit = Boolean(selected) && count >= 40;
+
   function pickRandom() {
     if (prompts.length === 0) return;
     const p = prompts[Math.floor(Math.random() * prompts.length)]!;
@@ -55,7 +59,7 @@ export function WritingNewClient({ taskType, level }: WritingNewClientProps) {
   }
 
   async function submit() {
-    if (!selected || wordCount(essay) < meta.minWords) return;
+    if (!selected || !canSubmit) return;
     setSubmitting(true);
     setError(null);
     setStep("Đang chấm 4 tiêu chí…");
@@ -91,8 +95,6 @@ export function WritingNewClient({ taskType, level }: WritingNewClientProps) {
     }
   }
 
-  const canSubmit = Boolean(selected) && wordCount(essay) >= meta.minWords;
-
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap gap-2">
@@ -116,7 +118,8 @@ export function WritingNewClient({ taskType, level }: WritingNewClientProps) {
               type="button"
               className={cn(
                 "block w-full rounded-md border px-3 py-2 text-left text-sm hover:border-[var(--brand)]/40",
-                selected?.id === p.id && "border-[var(--brand)] bg-[var(--brand-soft)]/40"
+                selected?.id === p.id &&
+                  "border-[var(--brand)] bg-[var(--brand-soft)]/40"
               )}
               onClick={() => {
                 setSelected(p);
@@ -157,16 +160,33 @@ export function WritingNewClient({ taskType, level }: WritingNewClientProps) {
         />
       ) : null}
 
+      {selected && underMin && count > 0 ? (
+        <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          Cảnh báo: bài mới có {count}/{meta.minWords} từ. Bạn vẫn có thể nộp,
+          nhưng Task Achievement sẽ bị trừ điểm vì dưới mức tối thiểu.
+        </p>
+      ) : null}
+
       <div className="flex flex-wrap items-center gap-3">
         <Button
           size="lg"
           disabled={!canSubmit || submitting}
-          title={!canSubmit ? `Cần tối thiểu ${meta.minWords} từ` : undefined}
+          title={
+            underMin
+              ? `Dưới ${meta.minWords} từ — vẫn nộp được nhưng sẽ bị trừ điểm`
+              : undefined
+          }
           onClick={() => void submit()}
         >
-          {submitting ? "Đang nộp…" : "Nộp bài"}
+          {submitting
+            ? "Đang nộp…"
+            : underMin
+              ? "Nộp bài (dưới số từ)"
+              : "Nộp bài"}
         </Button>
-        {step ? <p className="text-sm text-muted-foreground animate-pulse">{step}</p> : null}
+        {step ? (
+          <p className="animate-pulse text-sm text-muted-foreground">{step}</p>
+        ) : null}
       </div>
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
     </div>

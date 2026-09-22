@@ -76,7 +76,11 @@ export function SpeakingRecorder({
         });
       }, 1000);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Không mở được micro.");
+      const msg =
+        e instanceof Error ? e.message : "Không mở được micro.";
+      setError(
+        `${msg} Bạn có thể dùng ô “Chế độ gõ transcript” bên dưới để tiếp tục.`
+      );
     }
   }
 

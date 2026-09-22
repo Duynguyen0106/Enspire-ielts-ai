@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { Prisma } from "@prisma/client";
+import { z } from "zod";
 import {
   enforceDailyRateLimit,
   enforceRateLimit,
@@ -9,10 +10,16 @@ import {
 import { prisma } from "@/lib/prisma";
 import { evaluateWritingGym } from "@/lib/ai/writing-gym";
 import { generateModelAnswers } from "@/lib/ai/generate-model-answers";
+import { wordCount } from "@/lib/writing-metrics";
+import { hashPrompt } from "@/lib/ai/openai";
 
 type Ctx = { params: Promise<{ id: string }> };
 
-export async function POST(_req: Request, context: Ctx) {
+const bodySchema = z.object({
+  essayText: z.string().min(20).optional(),
+});
+
+export async function POST(req: Request, context: Ctx) {
   const { user, error } = await requireApiUser();
   if (error || !user) return error!;
   const limited = await enforceRateLimit(user.id, "writing-reeval", 10);
@@ -20,14 +27,65 @@ export async function POST(_req: Request, context: Ctx) {
   const daily = await enforceDailyRateLimit(user.id, "writing-reeval-day", 3);
   if (daily) return daily;
 
+  let body: unknown = {};
+  try {
+    body = await req.json();
+  } catch {
+    body = {};
+  }
+  const parsed = bodySchema.safeParse(body);
+  if (!parsed.success) return jsonError("Dữ liệu không hợp lệ.");
+
   const { id } = await context.params;
   const submission = await prisma.writingSubmission.findFirst({
     where: { id, userId: user.id },
+    include: { evaluation: true },
   });
   if (!submission) return jsonError("Không tìm thấy bài nộp.", 404);
 
+  const essayText = parsed.data.essayText?.trim() || submission.essayText;
+
+  if (submission.evaluation) {
+    await prisma.aIFeedback.create({
+      data: {
+        userId: user.id,
+        kind: "WRITING_EVAL_HISTORY",
+        model: "archive",
+        promptHash: hashPrompt(
+          `${submission.id}:${submission.evaluation.id}:${submission.evaluation.overallBand}`
+        ),
+        responseJson: {
+          submissionId: submission.id,
+          evaluationId: submission.evaluation.id,
+          overallBand: submission.evaluation.overallBand,
+          criteriaJson: submission.evaluation.criteriaJson,
+          correctionsJson: submission.evaluation.correctionsJson,
+          nextStepsJson: submission.evaluation.nextStepsJson,
+          strengthsJson: submission.evaluation.strengthsJson,
+          modelBand6: submission.evaluation.modelBand6,
+          modelBand75: submission.evaluation.modelBand75,
+          modelBand9: submission.evaluation.modelBand9,
+          archivedAt: new Date().toISOString(),
+          previousEssayPreview: submission.essayText.slice(0, 400),
+        } as Prisma.InputJsonValue,
+      },
+    });
+  }
+
+  const previousBand = submission.evaluation?.overallBand ?? null;
+
+  if (parsed.data.essayText) {
+    await prisma.writingSubmission.update({
+      where: { id: submission.id },
+      data: {
+        essayText,
+        wordCount: wordCount(essayText),
+      },
+    });
+  }
+
   const evaluation = await evaluateWritingGym({
-    text: submission.essayText,
+    text: essayText,
     taskPrompt: submission.prompt,
     taskType: submission.taskType,
     level: submission.level,
@@ -44,7 +102,10 @@ export async function POST(_req: Request, context: Ctx) {
     where: { submissionId: submission.id },
     update: {
       overallBand: evaluation.overallBand,
-      criteriaJson: evaluation.criteria as unknown as Prisma.InputJsonValue,
+      criteriaJson: {
+        ...evaluation.criteria,
+        wordCountNote: evaluation.wordCountNote,
+      } as unknown as Prisma.InputJsonValue,
       correctionsJson: evaluation.corrections as unknown as Prisma.InputJsonValue,
       nextStepsJson: evaluation.nextSteps as unknown as Prisma.InputJsonValue,
       strengthsJson: evaluation.strengthsVi as unknown as Prisma.InputJsonValue,
@@ -60,7 +121,10 @@ export async function POST(_req: Request, context: Ctx) {
     create: {
       submissionId: submission.id,
       overallBand: evaluation.overallBand,
-      criteriaJson: evaluation.criteria as unknown as Prisma.InputJsonValue,
+      criteriaJson: {
+        ...evaluation.criteria,
+        wordCountNote: evaluation.wordCountNote,
+      } as unknown as Prisma.InputJsonValue,
       correctionsJson: evaluation.corrections as unknown as Prisma.InputJsonValue,
       nextStepsJson: evaluation.nextSteps as unknown as Prisma.InputJsonValue,
       strengthsJson: evaluation.strengthsVi as unknown as Prisma.InputJsonValue,
@@ -78,5 +142,8 @@ export async function POST(_req: Request, context: Ctx) {
   return NextResponse.json({
     submissionId: submission.id,
     evaluationId: saved.id,
+    overallBand: saved.overallBand,
+    previousBand,
+    historyArchived: previousBand != null,
   });
 }
