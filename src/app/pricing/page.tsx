@@ -3,6 +3,8 @@ import { auth } from "@/auth";
 import { PricingClient } from "@/components/billing/pricing-client";
 import { isFeatureEnabled } from "@/lib/feature-flags";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Bảng giá",
 };

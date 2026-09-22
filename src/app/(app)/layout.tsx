@@ -2,6 +2,8 @@ import { requireUser } from "@/lib/auth";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 
+export const dynamic = "force-dynamic";
+
 export default async function AppLayout({
   children,
 }: {

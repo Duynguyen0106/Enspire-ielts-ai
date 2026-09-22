@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 
+export const dynamic = "force-dynamic";
+
 export default function ExamLayout({ children }: { children: ReactNode }) {
   return (
     <div className="fixed inset-0 z-50 flex min-h-[100dvh] flex-col overflow-y-auto bg-background text-foreground">

@@ -2,6 +2,8 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { requireAdminAccess } from "@/lib/admin";
 
+export const dynamic = "force-dynamic";
+
 const NAV = [
   { href: "/admin", label: "Overview" },
   { href: "/admin/users", label: "Users" },
