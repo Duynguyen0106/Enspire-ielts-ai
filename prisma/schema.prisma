@@ -43,11 +43,12 @@ model User {
 
   accounts    Account[]
   sessions    Session[]
-  profile     Profile?
-  attempts    TestAttempt[]
-  progress    Progress[]
-  aiFeedback  AIFeedback[]
-  subscription Subscription?
+  profile          Profile?
+  attempts         TestAttempt[]
+  progress         Progress[]
+  aiFeedback       AIFeedback[]
+  subscription     Subscription?
+  placementResult  PlacementResult?
 }
 
 model Account {
@@ -172,6 +173,7 @@ model TestSection {
   order          Int
   durationMin    Int
   instructionsVi String?
+  metadataJson   Json?
 
   test      Test       @relation(fields: [testId], references: [id], onDelete: Cascade)
   skill     Skill      @relation(fields: [skillId], references: [id], onDelete: Cascade)
@@ -205,10 +207,11 @@ model TestAttempt {
   overallBand  Float?
   rawScoreJson Json?
 
-  user     User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  test     Test         @relation(fields: [testId], references: [id], onDelete: Cascade)
-  answers  Answer[]
-  feedback AIFeedback[]
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  test            Test             @relation(fields: [testId], references: [id], onDelete: Cascade)
+  answers         Answer[]
+  feedback        AIFeedback[]
+  placementResult PlacementResult?
 }
 
 model Answer {
@@ -266,4 +269,23 @@ model Subscription {
   currentPeriodEnd DateTime?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model PlacementResult {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  attemptId        String   @unique
+  listeningBand    Float
+  readingBand      Float
+  writingBand      Float
+  speakingBand     Float
+  overallBand      Float
+  recommendedLevel Int
+  strengthsJson    Json
+  weaknessesJson   Json
+  summaryVi        String   @db.Text
+  createdAt        DateTime @default(now())
+
+  user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  attempt TestAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
 }

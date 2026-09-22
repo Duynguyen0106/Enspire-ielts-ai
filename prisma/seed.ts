@@ -1,5 +1,6 @@
 import { PrismaClient, SkillName, Role } from "@prisma/client";
 import { hash } from "bcryptjs";
+import { seedPlacement } from "./seed-placement";
 
 const prisma = new PrismaClient();
 
@@ -134,6 +135,8 @@ async function main() {
   console.log(`- ${levels.length} levels`);
   console.log(`- ${skills.length} skills`);
   console.log(`- Admin user: ${admin.email}`);
+
+  await seedPlacement();
 }
 
 main()
