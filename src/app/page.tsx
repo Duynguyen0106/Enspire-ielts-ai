@@ -73,12 +73,28 @@ export default async function LandingPage() {
       </main>
 
       <footer className="relative z-10 border-t bg-white/60 px-6 py-8 backdrop-blur">
-        <div className="mx-auto max-w-6xl text-sm text-muted-foreground">
+        <div className="mx-auto max-w-6xl space-y-3 text-sm text-muted-foreground">
           <p className="font-medium text-foreground">VietIELTS AI</p>
-          <p className="mt-2 max-w-3xl">
+          <p className="max-w-3xl">
             VietIELTS AI là công cụ luyện tập. Điểm số do AI đưa ra chỉ mang tính
             tham khảo, không phải điểm IELTS chính thức.
           </p>
+          <p className="max-w-3xl text-xs leading-relaxed">
+            IELTS is a registered trademark of the British Council, IDP: IELTS
+            Australia and Cambridge Assessment English. VietIELTS AI is not
+            affiliated with or endorsed by any of these organizations.
+          </p>
+          <div className="flex flex-wrap gap-4 text-xs">
+            <Link href="/privacy" className="underline-offset-2 hover:underline">
+              Privacy
+            </Link>
+            <Link href="/terms" className="underline-offset-2 hover:underline">
+              Terms
+            </Link>
+            <Link href="/pricing" className="underline-offset-2 hover:underline">
+              Pricing
+            </Link>
+          </div>
         </div>
       </footer>
     </div>

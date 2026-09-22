@@ -216,6 +216,21 @@ export function createPracticeHandler(skill: "LISTENING" | "READING") {
     const limited = await enforceRateLimit(user.id, `practice-gen-${skill}`, 5);
     if (limited) return limited;
 
+    const { requireEntitlement } = await import("@/lib/entitlements");
+    const levelForGate = user.profile?.currentLevel ?? 1;
+    const gate = await requireEntitlement(
+      user.id,
+      "LISTENING_READING_PRACTICE",
+      { level: levelForGate }
+    );
+    if (!gate.allowed) {
+      const { jsonError } = await import("@/lib/api");
+      return jsonError(gate.reason ?? "Paywall", 402, {
+        feature: "LISTENING_READING_PRACTICE",
+        remaining: gate.remaining,
+      });
+    }
+
     let forceNew = false;
     try {
       const body = (await req.json()) as { forceNew?: boolean };

@@ -14,6 +14,24 @@ export async function POST(_req: Request, context: Ctx) {
   if (error || !user) return error!;
 
   const { testId } = await context.params;
+
+  const testMeta = await prisma.test.findUnique({
+    where: { id: testId },
+    include: { level: true },
+  });
+  const levelNumber = testMeta?.level?.number ?? 1;
+  const { requireEntitlement } = await import("@/lib/entitlements");
+  const gate = await requireEntitlement(user.id, "FULL_LEVEL_TEST", {
+    level: levelNumber,
+    consume: false,
+  });
+  if (!gate.allowed) {
+    return jsonError(gate.reason ?? "Paywall", 402, {
+      feature: "FULL_LEVEL_TEST",
+      remaining: gate.remaining,
+    });
+  }
+
   const check = await canStartAttempt(user.id, testId);
   if (!check.ok) {
     return jsonError(check.reason, check.status, {
@@ -43,7 +61,7 @@ export async function POST(_req: Request, context: Ctx) {
   });
   if (!full) return jsonError("Không tạo được phiên thi.", 500);
 
-  const levelNumber = full.test.level?.number ?? 1;
+  const resolvedLevel = full.test.level?.number ?? levelNumber;
 
   return NextResponse.json({
     attemptId: full.id,
@@ -53,10 +71,10 @@ export async function POST(_req: Request, context: Ctx) {
       id: full.test.id,
       title: full.test.title,
       durationMin: full.test.durationMin,
-      levelNumber,
+      levelNumber: resolvedLevel,
       passingRules: parsePassingRules(
         full.test.passingRulesJson,
-        levelNumber
+        resolvedLevel
       ),
       sections: full.test.sections.map((s) => ({
         id: s.id,

@@ -5,6 +5,8 @@ import { prisma } from "@/lib/prisma";
 import { AppHeader } from "@/components/app-header";
 import { LessonPlayer } from "@/components/lessons/lesson-player";
 import { lessonExerciseSchema } from "@/lib/ai/lesson-schemas";
+import { isAdminUser, studentVisibleReview } from "@/lib/content-filter";
+import { canUse } from "@/lib/entitlements";
 
 type LessonPageProps = {
   params: Promise<{ id: string }>;
@@ -34,7 +36,19 @@ export default async function LessonDetailPage({ params }: LessonPageProps) {
       exercises: { orderBy: { order: "asc" } },
     },
   });
-  if (!lesson || !lesson.publishedAt) notFound();
+  const admin = isAdminUser(user);
+  const visible = studentVisibleReview(admin);
+  const statusOk =
+    typeof visible === "string"
+      ? lesson?.reviewStatus === visible
+      : Boolean(lesson && visible.in.includes(lesson.reviewStatus));
+  if (!lesson || !lesson.publishedAt || !statusOk) notFound();
+
+  const gate = await canUse(user.id, "LESSON_ACCESS", {
+    level: lesson.level.number,
+    consume: false,
+  });
+  if (!gate.allowed) notFound();
 
   const contentJson =
     lesson.contentJson && typeof lesson.contentJson === "object"

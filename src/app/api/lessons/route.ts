@@ -3,6 +3,7 @@ import { SkillName } from "@prisma/client";
 import { z } from "zod";
 import { enforceRateLimit, jsonError, requireApiUser } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
+import { isAdminUser, studentVisibleReview } from "@/lib/content-filter";
 
 const querySchema = z.object({
   level: z.coerce.number().int().min(1).max(9),
@@ -25,6 +26,18 @@ export async function GET(req: Request) {
     return jsonError("Thiếu hoặc sai tham số level/skill.");
   }
 
+  const { requireEntitlement } = await import("@/lib/entitlements");
+  const gate = await requireEntitlement(user.id, "LESSON_ACCESS", {
+    level: parsed.data.level,
+    consume: false,
+  });
+  if (!gate.allowed) {
+    return jsonError(gate.reason ?? "Paywall", 402, {
+      feature: "LESSON_ACCESS",
+      remaining: gate.remaining,
+    });
+  }
+
   const level = await prisma.level.findUnique({
     where: { number: parsed.data.level },
   });
@@ -35,11 +48,13 @@ export async function GET(req: Request) {
     return jsonError("Không tìm thấy level hoặc kỹ năng.", 404);
   }
 
+  const admin = isAdminUser(user);
   const lessons = await prisma.lesson.findMany({
     where: {
       levelId: level.id,
       skillId: skill.id,
       publishedAt: { not: null },
+      reviewStatus: studentVisibleReview(admin),
     },
     orderBy: { order: "asc" },
     select: {

@@ -23,6 +23,17 @@ export async function POST(req: Request) {
   const limited = await enforceRateLimit(user.id, "writing-submit", 10);
   if (limited) return limited;
 
+  const { requireEntitlement } = await import("@/lib/entitlements");
+  const gate = await requireEntitlement(user.id, "WRITING_SUBMISSION", {
+    level: user.profile?.currentLevel ?? 1,
+  });
+  if (!gate.allowed) {
+    return jsonError(gate.reason ?? "Paywall", 402, {
+      feature: "WRITING_SUBMISSION",
+      remaining: gate.remaining,
+    });
+  }
+
   let body: unknown;
   try {
     body = await req.json();

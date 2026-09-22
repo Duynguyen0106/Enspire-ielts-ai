@@ -18,6 +18,7 @@ export default async function LessonsPage() {
   const recent = await prisma.lesson.findMany({
     where: {
       publishedAt: { not: null },
+      reviewStatus: "APPROVED",
       level: { number: currentLevel },
     },
     include: { skill: true, level: true },

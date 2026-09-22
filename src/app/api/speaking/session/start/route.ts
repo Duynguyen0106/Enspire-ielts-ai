@@ -4,6 +4,7 @@ import { z } from "zod";
 import { enforceRateLimit, jsonError, requireApiUser } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
 import { buildSpeakingScript } from "@/lib/ai/speaking-gym";
+import { requireEntitlement } from "@/lib/entitlements";
 
 const bodySchema = z.object({
   sessionType: z.nativeEnum(SpeakingSessionType),
@@ -27,6 +28,15 @@ export async function POST(req: Request) {
   if (!parsed.success) return jsonError("Dữ liệu không hợp lệ.");
 
   const level = parsed.data.level ?? user.profile?.currentLevel ?? 1;
+
+  const gate = await requireEntitlement(user.id, "SPEAKING_SESSION", { level });
+  if (!gate.allowed) {
+    return jsonError(gate.reason ?? "Paywall", 402, {
+      feature: "SPEAKING_SESSION",
+      remaining: gate.remaining,
+    });
+  }
+
   const script = buildSpeakingScript({
     sessionType: parsed.data.sessionType,
     part: parsed.data.part,
