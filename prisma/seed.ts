@@ -1,6 +1,7 @@
 import { PrismaClient, SkillName, Role } from "@prisma/client";
 import { hash } from "bcryptjs";
 import { seedPlacement } from "./seed-placement";
+import { seedLessons } from "./seed-lessons";
 
 const prisma = new PrismaClient();
 
@@ -137,6 +138,9 @@ async function main() {
   console.log(`- Admin user: ${admin.email}`);
 
   await seedPlacement();
+
+  const sample = process.argv.includes("--sample");
+  await seedLessons({ sample: sample || !process.env.OPENAI_API_KEY?.trim() });
 }
 
 main()

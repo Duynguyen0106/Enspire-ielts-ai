@@ -19,6 +19,10 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { SKILL_LABELS, SKILL_LABELS_VI } from "@/lib/constants";
+import {
+  computeLessonProgress,
+  getNextUnfinishedLesson,
+} from "@/lib/lesson-progress";
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -55,6 +59,27 @@ export default async function DashboardPage({
 
   const canRetakePlacement = placementDone && !fullLevelAttempt;
 
+  const nextLesson = await getNextUnfinishedLesson(user.id, currentLevel);
+  const skillPercents = Object.fromEntries(
+    await Promise.all(
+      skills.map(async (skill) => {
+        const prog = await computeLessonProgress(user.id, currentLevel, skill);
+        return [skill, prog.percent] as const;
+      })
+    )
+  ) as Record<(typeof skills)[number], number>;
+
+  const recentCompletions = await prisma.lessonCompletion.findMany({
+    where: { userId: user.id },
+    include: {
+      lesson: {
+        include: { skill: true, level: true },
+      },
+    },
+    orderBy: { completedAt: "desc" },
+    take: 5,
+  });
+
   return (
     <>
       <AppHeader title="Dashboard" currentLevel={currentLevel} />
@@ -70,6 +95,23 @@ export default async function DashboardPage({
             Tiếp tục lộ trình IELTS của bạn hôm nay.
           </p>
         </div>
+
+        {nextLesson ? (
+          <Card>
+            <CardHeader>
+              <CardTitle>Tiếp tục học</CardTitle>
+              <CardDescription>
+                Level {currentLevel} · {nextLesson.skill.name}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-wrap items-center justify-between gap-3">
+              <p className="font-medium">{nextLesson.titleVi}</p>
+              <Button render={<Link href={`/lessons/${nextLesson.id}`} />}>
+                Tiếp tục
+              </Button>
+            </CardContent>
+          </Card>
+        ) : null}
 
         {placementResult ? (
           <Card>
@@ -161,7 +203,7 @@ export default async function DashboardPage({
           <CardHeader>
             <CardTitle>Tiến độ 4 kỹ năng</CardTitle>
             <CardDescription>
-              Bắt đầu từ 0% — sẽ cập nhật khi bạn hoàn thành bài học.
+              Theo Progress Level {currentLevel}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -171,13 +213,41 @@ export default async function DashboardPage({
                   <span>
                     {SKILL_LABELS_VI[skill]} · {SKILL_LABELS[skill]}
                   </span>
-                  <span className="text-muted-foreground">0%</span>
+                  <span className="text-muted-foreground">
+                    {skillPercents[skill] ?? 0}%
+                  </span>
                 </div>
-                <Progress value={0} />
+                <Progress value={skillPercents[skill] ?? 0} />
               </div>
             ))}
           </CardContent>
         </Card>
+
+        {recentCompletions.length > 0 ? (
+          <Card>
+            <CardHeader>
+              <CardTitle>Phiên học gần đây</CardTitle>
+              <CardDescription>5 bài hoàn thành gần nhất</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {recentCompletions.map((c) => (
+                <Link
+                  key={c.id}
+                  href={`/lessons/${c.lessonId}`}
+                  className="flex items-center justify-between gap-3 border px-3 py-2 text-sm hover:border-[var(--brand)]/40"
+                >
+                  <span className="truncate">
+                    L{c.lesson.level.number} · {c.lesson.skill.name} ·{" "}
+                    {c.lesson.titleVi}
+                  </span>
+                  <span className="shrink-0 font-medium text-[var(--brand)]">
+                    {(c.score * 100).toFixed(0)}%
+                  </span>
+                </Link>
+              ))}
+            </CardContent>
+          </Card>
+        ) : null}
 
         {!placementDone ? (
           <Card>

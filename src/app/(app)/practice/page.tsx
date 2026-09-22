@@ -20,24 +20,28 @@ const practices = [
     title: "Listening",
     titleVi: "Nghe",
     icon: Ear,
+    desc: "Luyện tập ngẫu nhiên — đề mới theo level của bạn.",
   },
   {
     href: "/practice/reading",
     title: "Reading",
     titleVi: "Đọc",
     icon: BookOpen,
+    desc: "Luyện tập ngẫu nhiên — đoạn văn + câu hỏi.",
   },
   {
     href: "/practice/writing",
     title: "Writing",
     titleVi: "Viết",
     icon: PenLine,
+    desc: "Coming soon — scratch pad sẽ có ở Phase 4.",
   },
   {
     href: "/practice/speaking",
     title: "Speaking",
     titleVi: "Nói",
     icon: Mic,
+    desc: "Coming soon — scratch pad sẽ có ở Phase 4.",
   },
 ] as const;
 
@@ -54,7 +58,7 @@ export default async function PracticePage() {
             Luyện 4 kỹ năng
           </h2>
           <p className="mt-1 text-muted-foreground">
-            Chọn kỹ năng để bắt đầu luyện tập.
+            Listening & Reading tạo đề theo Level {currentLevel}.
           </p>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
@@ -70,7 +74,7 @@ export default async function PracticePage() {
                     <CardTitle>
                       {item.titleVi} · {item.title}
                     </CardTitle>
-                    <CardDescription>Coming soon</CardDescription>
+                    <CardDescription>{item.desc}</CardDescription>
                   </CardHeader>
                 </Card>
               </Link>

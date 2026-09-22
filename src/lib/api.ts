@@ -16,8 +16,20 @@ export async function requireApiUser() {
   return { user, error: null };
 }
 
-export async function enforceAiRateLimit(userId: string) {
-  const result = await rateLimitUser(userId, "ai");
+export async function enforceAiRateLimit(userId: string, limit = 10) {
+  const result = await rateLimitUser(userId, "ai", limit);
+  if (!result.success) {
+    return rateLimitExceededResponse();
+  }
+  return null;
+}
+
+export async function enforceRateLimit(
+  userId: string,
+  bucket: string,
+  limit: number
+) {
+  const result = await rateLimitUser(userId, bucket, limit);
   if (!result.success) {
     return rateLimitExceededResponse();
   }

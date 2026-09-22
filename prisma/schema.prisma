@@ -31,6 +31,18 @@ enum AttemptStatus {
   SCORED
 }
 
+enum TutorRole {
+  USER
+  ASSISTANT
+  SYSTEM
+}
+
+enum ContentRefType {
+  LESSON
+  PASSAGE
+  AUDIO_SCRIPT
+}
+
 model User {
   id            String    @id @default(cuid())
   email         String    @unique
@@ -49,6 +61,8 @@ model User {
   aiFeedback       AIFeedback[]
   subscription     Subscription?
   placementResult  PlacementResult?
+  lessonCompletions LessonCompletion[]
+  tutorConversations TutorConversation[]
 }
 
 model Account {
@@ -124,18 +138,22 @@ model Skill {
 }
 
 model Lesson {
-  id          String    @id @default(cuid())
-  levelId     String
-  skillId     String
-  title       String
-  titleVi     String
-  order       Int
-  contentJson Json?
-  publishedAt DateTime?
+  id            String    @id @default(cuid())
+  levelId       String
+  skillId       String
+  title         String
+  titleVi       String
+  order         Int
+  contentJson   Json?
+  publishedAt   DateTime?
+  isCheckpoint  Boolean   @default(false)
+  estimatedMin  Int       @default(15)
 
-  level     Level      @relation(fields: [levelId], references: [id], onDelete: Cascade)
-  skill     Skill      @relation(fields: [skillId], references: [id], onDelete: Cascade)
-  exercises Exercise[]
+  level       Level              @relation(fields: [levelId], references: [id], onDelete: Cascade)
+  skill       Skill              @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  exercises   Exercise[]
+  completions LessonCompletion[]
+  conversations TutorConversation[]
 
   @@unique([levelId, skillId, order])
 }
@@ -288,4 +306,53 @@ model PlacementResult {
 
   user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   attempt TestAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+}
+
+model LessonCompletion {
+  id               String   @id @default(cuid())
+  userId           String
+  lessonId         String
+  completedAt      DateTime @default(now())
+  score            Float
+  checkpointPassed Boolean  @default(false)
+  attemptsJson     Json?
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, lessonId])
+}
+
+model TutorConversation {
+  id        String   @id @default(cuid())
+  userId    String
+  lessonId  String?
+  title     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user     User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson   Lesson?        @relation(fields: [lessonId], references: [id], onDelete: SetNull)
+  messages TutorMessage[]
+}
+
+model TutorMessage {
+  id             String    @id @default(cuid())
+  conversationId String
+  role           TutorRole
+  content        String    @db.Text
+  tokens         Int?
+  createdAt      DateTime  @default(now())
+
+  conversation TutorConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+}
+
+model ContentEmbedding {
+  id        String         @id @default(cuid())
+  refType   ContentRefType
+  refId     String
+  embedding Float[]
+  createdAt DateTime       @default(now())
+
+  @@index([refType, refId])
 }

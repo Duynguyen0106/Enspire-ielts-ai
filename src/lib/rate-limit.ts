@@ -1,5 +1,5 @@
-import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
+import { Ratelimit } from "@upstash/ratelimit";
 
 type LimiterResult = {
   success: boolean;
@@ -8,10 +8,11 @@ type LimiterResult = {
 };
 
 const memoryHits = new Map<string, number[]>();
+const upstashLimiters = new Map<string, Ratelimit>();
 
 function memoryLimit(
   key: string,
-  limit = 10,
+  limit: number,
   windowMs = 60_000
 ): LimiterResult {
   const now = Date.now();
@@ -22,7 +23,7 @@ function memoryLimit(
     return {
       success: false,
       remaining: 0,
-      reset: hits[0]! + windowMs,
+      reset: (hits[0] ?? now) + windowMs,
     };
   }
   hits.push(now);
@@ -34,35 +35,35 @@ function memoryLimit(
   };
 }
 
-let upstashLimiter: Ratelimit | null = null;
-
-function getUpstashLimiter(): Ratelimit | null {
+function getUpstashLimiter(limit: number): Ratelimit | null {
   const url = process.env.UPSTASH_REDIS_REST_URL?.trim();
   const token = process.env.UPSTASH_REDIS_REST_TOKEN?.trim();
   if (!url || !token) return null;
 
-  if (!upstashLimiter) {
-    upstashLimiter = new Ratelimit({
+  const cacheKey = String(limit);
+  let limiter = upstashLimiters.get(cacheKey);
+  if (!limiter) {
+    limiter = new Ratelimit({
       redis: new Redis({ url, token }),
-      limiter: Ratelimit.slidingWindow(10, "1 m"),
-      prefix: "vietielts:rl",
+      limiter: Ratelimit.slidingWindow(limit, "1 m"),
+      prefix: `vietielts:rl:${limit}`,
       analytics: false,
     });
+    upstashLimiters.set(cacheKey, limiter);
   }
-  return upstashLimiter;
+  return limiter;
 }
 
-/** 10 requests / minute per user (Upstash if configured, else in-memory). */
 export async function rateLimitUser(
   userId: string,
-  bucket = "ai"
+  bucket = "ai",
+  limit = 10
 ): Promise<LimiterResult> {
   const key = `${bucket}:${userId}`;
-  const limiter = getUpstashLimiter();
+  const limiter = getUpstashLimiter(limit);
   if (!limiter) {
-    return memoryLimit(key);
+    return memoryLimit(key, limit);
   }
-
   const result = await limiter.limit(key);
   return {
     success: result.success,
@@ -79,4 +80,44 @@ export function rateLimitExceededResponse() {
     },
     { status: 429 }
   );
+}
+
+export function getRedis(): Redis | null {
+  const url = process.env.UPSTASH_REDIS_REST_URL?.trim();
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN?.trim();
+  if (!url || !token) return null;
+  return new Redis({ url, token });
+}
+
+const memoryCache = new Map<string, { value: string; expiresAt: number }>();
+
+export async function cacheGet(key: string): Promise<string | null> {
+  const redis = getRedis();
+  if (redis) {
+    const value = await redis.get<string>(key);
+    return value ?? null;
+  }
+  const hit = memoryCache.get(key);
+  if (!hit) return null;
+  if (hit.expiresAt < Date.now()) {
+    memoryCache.delete(key);
+    return null;
+  }
+  return hit.value;
+}
+
+export async function cacheSet(
+  key: string,
+  value: string,
+  ttlSeconds: number
+): Promise<void> {
+  const redis = getRedis();
+  if (redis) {
+    await redis.set(key, value, { ex: ttlSeconds });
+    return;
+  }
+  memoryCache.set(key, {
+    value,
+    expiresAt: Date.now() + ttlSeconds * 1000,
+  });
 }

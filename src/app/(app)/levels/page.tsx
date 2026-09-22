@@ -1,20 +1,19 @@
 import type { Metadata } from "next";
+import type { SkillName } from "@prisma/client";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { AppHeader } from "@/components/app-header";
-import { Badge } from "@/components/ui/badge";
+import { LevelCard } from "@/components/lessons/level-card";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { cn } from "@/lib/utils";
+  computeLessonProgress,
+  isLevelUnlocked,
+} from "@/lib/lesson-progress";
 
 export const metadata: Metadata = {
   title: "Lộ trình",
 };
+
+const skills: SkillName[] = ["LISTENING", "READING", "WRITING", "SPEAKING"];
 
 export default async function LevelsPage() {
   const user = await requireUser();
@@ -22,6 +21,31 @@ export default async function LevelsPage() {
   const levels = await prisma.level.findMany({
     orderBy: { number: "asc" },
   });
+
+  const cards = await Promise.all(
+    levels.map(async (level) => {
+      const unlocked = await isLevelUnlocked(user.id, level.number);
+      const skillProgress = Object.fromEntries(
+        await Promise.all(
+          skills.map(async (skill) => {
+            const prog = await computeLessonProgress(
+              user.id,
+              level.number,
+              skill
+            );
+            return [skill, prog.percent] as const;
+          })
+        )
+      ) as Record<SkillName, number>;
+
+      return {
+        level,
+        locked: !unlocked && level.number !== currentLevel,
+        isCurrent: level.number === currentLevel,
+        skillProgress,
+      };
+    })
+  );
 
   return (
     <>
@@ -32,34 +56,21 @@ export default async function LevelsPage() {
             9 cấp độ IELTS
           </h2>
           <p className="mt-1 text-muted-foreground">
-            Level hiện tại của bạn được đánh dấu bên dưới.
+            Mỗi level có 4 kỹ năng · 3 bài học + 1 checkpoint.
           </p>
         </div>
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {levels.map((level) => {
-            const isCurrent = level.number === currentLevel;
-            return (
-              <Card
-                key={level.id}
-                className={cn(
-                  isCurrent && "border-[var(--brand)] ring-2 ring-[var(--brand)]/20"
-                )}
-              >
-                <CardHeader>
-                  <div className="flex items-center justify-between gap-2">
-                    <CardTitle className="text-base">{level.titleVi}</CardTitle>
-                    {isCurrent ? <Badge>Hiện tại</Badge> : null}
-                  </div>
-                  <CardDescription>{level.title}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground">
-                    {level.descriptionVi}
-                  </p>
-                </CardContent>
-              </Card>
-            );
-          })}
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {cards.map(({ level, locked, isCurrent, skillProgress }) => (
+            <LevelCard
+              key={level.id}
+              number={level.number}
+              titleVi={level.titleVi}
+              descriptionVi={level.descriptionVi}
+              locked={locked && !isCurrent}
+              isCurrent={isCurrent}
+              skillProgress={skillProgress}
+            />
+          ))}
         </div>
       </div>
     </>
