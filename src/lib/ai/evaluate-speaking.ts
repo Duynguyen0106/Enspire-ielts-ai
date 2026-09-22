@@ -25,20 +25,24 @@ function heuristicSpeakingEval(transcript: string): SpeakingEval {
   const { wordsPerMinute, wordCount } = estimateFluencyFromTranscript(
     transcript
   );
-  const base = wordCount < 40 ? 4.0 : wordsPerMinute > 100 ? 6.0 : 5.0;
+  const veryShort = wordCount < 25;
+  const base = veryShort ? 3.5 : wordCount < 40 ? 4.0 : wordsPerMinute > 100 ? 6.0 : 5.0;
+  const fluencyBand = veryShort ? 3.0 : base;
   return {
     overallBand: base,
     criteria: {
       fluencyCoherence: {
-        band: base,
-        feedbackVi: "Độ lưu loát ở mức trung bình; hãy nói dài hơn và liên kết ý.",
+        band: fluencyBand,
+        feedbackVi: veryShort
+          ? "Câu trả lời quá ngắn — Fluency/Coherence bị trừ. Hãy nói dài hơn và liên kết ý."
+          : "Độ lưu loát ở mức trung bình; hãy nói dài hơn và liên kết ý.",
       },
       lexicalResource: {
         band: base,
         feedbackVi: "Từ vựng cơ bản; cần thêm cụm từ tự nhiên.",
       },
       grammaticalRange: {
-        band: Math.max(4, base - 0.5),
+        band: Math.max(3, base - 0.5),
         feedbackVi: "Ngữ pháp đủ hiểu; giảm lỗi thì và mạo từ.",
       },
       pronunciation: {

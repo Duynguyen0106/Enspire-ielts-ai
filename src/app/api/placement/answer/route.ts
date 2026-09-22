@@ -2,15 +2,12 @@ import { NextResponse } from "next/server";
 import type { Prisma } from "@prisma/client";
 import { AttemptStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { enforceAiRateLimit, jsonError, requireApiUser } from "@/lib/api";
+import { jsonError, requireApiUser } from "@/lib/api";
 import { placementAnswerBodySchema } from "@/lib/ai/schemas";
 
 export async function POST(req: Request) {
   const { user, error } = await requireApiUser();
   if (error || !user) return error!;
-
-  const limited = await enforceAiRateLimit(user.id);
-  if (limited) return limited;
 
   let body: unknown;
   try {

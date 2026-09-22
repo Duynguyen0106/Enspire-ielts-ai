@@ -24,14 +24,16 @@ function heuristicWritingEval(
 ): WritingEval {
   const words = countWords(text);
   const under = words < minWords;
-  const base = under ? 4.5 : words > 250 ? 6.0 : 5.5;
+  const veryShort = words < 80;
+  const base = veryShort ? 3.5 : under ? 4.5 : words > 250 ? 6.0 : 5.5;
+  const taskBand = veryShort ? 3.0 : under ? 4.0 : base;
   return {
     overallBand: base,
     criteria: {
       taskAchievement: {
-        band: under ? 4.0 : base,
+        band: taskBand,
         feedbackVi: under
-          ? `Bài viết chỉ có ${words} từ (tối thiểu ${minWords}). Cần phát triển ý đầy đủ hơn.`
+          ? `Bài viết chỉ có ${words} từ (tối thiểu ${minWords}). Task Achievement bị trừ điểm vì chưa phát triển đủ ý.`
           : "Bạn đã trả lời đề bài ở mức chấp nhận được.",
       },
       coherenceCohesion: {
@@ -43,7 +45,7 @@ function heuristicWritingEval(
         feedbackVi: "Từ vựng đủ dùng; hãy mở rộng cụm từ học thuật.",
       },
       grammaticalRange: {
-        band: Math.max(4, base - 0.5),
+        band: Math.max(3, base - 0.5),
         feedbackVi: "Có câu đúng; cần đa dạng hóa cấu trúc phức tạp.",
       },
     },
