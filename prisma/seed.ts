@@ -2,6 +2,7 @@ import { PrismaClient, SkillName, Role } from "@prisma/client";
 import { hash } from "bcryptjs";
 import { seedPlacement } from "./seed-placement";
 import { seedLessons } from "./seed-lessons";
+import { seedWritingContent } from "./seed-writing-prompts";
 
 const prisma = new PrismaClient();
 
@@ -141,6 +142,7 @@ async function main() {
 
   const sample = process.argv.includes("--sample");
   await seedLessons({ sample: sample || !process.env.OPENAI_API_KEY?.trim() });
+  await seedWritingContent();
 }
 
 main()

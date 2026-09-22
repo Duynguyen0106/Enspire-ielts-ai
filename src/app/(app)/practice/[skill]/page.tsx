@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { AppHeader } from "@/components/app-header";
 import { PracticeRunner } from "@/components/practice/practice-runner";
-import { ComingSoonCard } from "@/components/coming-soon-card";
 
 type PracticeSkillPageProps = {
   params: Promise<{ skill: string }>;
@@ -35,7 +34,9 @@ export default async function PracticeSkillPage({
   const meta = skillMeta[skill];
   if (!meta) notFound();
 
-  const isLive = skill === "listening" || skill === "reading";
+  if (skill === "writing") redirect("/writing");
+  if (skill === "speaking") redirect("/speaking");
+  if (skill !== "listening" && skill !== "reading") notFound();
 
   return (
     <>
@@ -44,14 +45,7 @@ export default async function PracticeSkillPage({
         currentLevel={currentLevel}
       />
       <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
-        {isLive ? (
-          <PracticeRunner skill={skill} />
-        ) : (
-          <ComingSoonCard
-            title={`Luyện ${meta.titleVi} (${meta.title})`}
-            description="Coming soon — scratch pad mini sẽ có ở Phase 4. Thử Writing/Speaking trong bài học level trước."
-          />
-        )}
+        <PracticeRunner skill={skill} />
       </div>
     </>
   );

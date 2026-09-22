@@ -43,6 +43,19 @@ enum ContentRefType {
   AUDIO_SCRIPT
 }
 
+enum WritingTaskType {
+  TASK1_ACADEMIC
+  TASK1_GENERAL
+  TASK2
+}
+
+enum SpeakingSessionType {
+  PART_PRACTICE
+  FULL_SIM
+  PLACEMENT
+  FULL_TEST
+}
+
 model User {
   id            String    @id @default(cuid())
   email         String    @unique
@@ -63,6 +76,8 @@ model User {
   placementResult  PlacementResult?
   lessonCompletions LessonCompletion[]
   tutorConversations TutorConversation[]
+  writingSubmissions WritingSubmission[]
+  speakingSessions   SpeakingSession[]
 }
 
 model Account {
@@ -355,4 +370,126 @@ model ContentEmbedding {
   createdAt DateTime       @default(now())
 
   @@index([refType, refId])
+}
+
+model WritingPrompt {
+  id             String          @id @default(cuid())
+  taskType       WritingTaskType
+  levelBucket    String
+  levelMin       Int
+  levelMax       Int
+  title          String
+  titleVi        String
+  prompt         String          @db.Text
+  promptImageUrl String?
+  publishedAt    DateTime?       @default(now())
+  createdAt      DateTime        @default(now())
+
+  modelAnswers WritingModelAnswer[]
+}
+
+model WritingModelAnswer {
+  id        String   @id @default(cuid())
+  promptId  String
+  band6Json Json
+  band75Json Json
+  band9Json Json
+  createdAt DateTime @default(now())
+
+  prompt WritingPrompt @relation(fields: [promptId], references: [id], onDelete: Cascade)
+
+  @@unique([promptId])
+}
+
+model WritingSubmission {
+  id             String          @id @default(cuid())
+  userId         String
+  taskType       WritingTaskType
+  level          Int
+  promptId       String?
+  prompt         String          @db.Text
+  promptImageUrl String?
+  essayText      String          @db.Text
+  wordCount      Int
+  timeSpentSec   Int             @default(0)
+  attemptId      String?
+  createdAt      DateTime        @default(now())
+
+  user        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  evaluation  WritingEvaluation?
+}
+
+model WritingEvaluation {
+  id              String   @id @default(cuid())
+  submissionId    String   @unique
+  overallBand     Float
+  criteriaJson    Json
+  correctionsJson Json
+  nextStepsJson   Json
+  strengthsJson   Json?
+  modelBand6      String?  @db.Text
+  modelBand75     String?  @db.Text
+  modelBand9      String?  @db.Text
+  modelNotesJson  Json?
+  createdAt       DateTime @default(now())
+
+  submission WritingSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+}
+
+model WritingTemplate {
+  id               String          @id @default(cuid())
+  taskType         WritingTaskType
+  band             Int
+  title            String
+  titleVi          String
+  structureJson    Json
+  samplePhrasesJson Json
+  createdAt        DateTime        @default(now())
+}
+
+model SpeakingSession {
+  id          String              @id @default(cuid())
+  userId      String
+  sessionType SpeakingSessionType
+  level       Int
+  part        Int?
+  scriptJson  Json?
+  startedAt   DateTime            @default(now())
+  completedAt DateTime?
+  attemptId   String?
+
+  user        User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  turns       SpeakingTurn[]
+  evaluation  SpeakingEvaluation?
+}
+
+model SpeakingTurn {
+  id           String   @id @default(cuid())
+  sessionId    String
+  part         Int
+  questionText String   @db.Text
+  audioUrl     String?  @db.Text
+  transcript   String   @db.Text
+  wordTimestampsJson Json?
+  durationSec  Float    @default(0)
+  wpm          Float    @default(0)
+  pauseCount   Int      @default(0)
+  fillerCount  Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  session SpeakingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+}
+
+model SpeakingEvaluation {
+  id              String   @id @default(cuid())
+  sessionId       String   @unique
+  overallBand     Float
+  criteriaJson    Json
+  correctionsJson Json
+  nextStepsJson   Json
+  strengthsJson   Json?
+  drillsJson      Json?
+  createdAt       DateTime @default(now())
+
+  session SpeakingSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 }

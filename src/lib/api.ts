@@ -1,6 +1,10 @@
-import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
-import { rateLimitExceededResponse, rateLimitUser } from "@/lib/rate-limit";
+import {
+  rateLimitExceededResponse,
+  rateLimitUser,
+  rateLimitUserDaily,
+} from "@/lib/rate-limit";
+import { NextResponse } from "next/server";
 
 export async function requireApiUser() {
   const user = await getCurrentUser();
@@ -32,6 +36,24 @@ export async function enforceRateLimit(
   const result = await rateLimitUser(userId, bucket, limit);
   if (!result.success) {
     return rateLimitExceededResponse();
+  }
+  return null;
+}
+
+export async function enforceDailyRateLimit(
+  userId: string,
+  bucket: string,
+  limit: number
+) {
+  const result = await rateLimitUserDaily(userId, bucket, limit);
+  if (!result.success) {
+    return Response.json(
+      {
+        error:
+          "Bạn đã đạt giới hạn trong ngày. Vui lòng thử lại vào ngày mai.",
+      },
+      { status: 429 }
+    );
   }
   return null;
 }

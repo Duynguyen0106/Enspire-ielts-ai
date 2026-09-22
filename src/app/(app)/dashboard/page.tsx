@@ -23,6 +23,7 @@ import {
   computeLessonProgress,
   getNextUnfinishedLesson,
 } from "@/lib/lesson-progress";
+import { BandProgressChart } from "@/components/writing/band-progress-chart";
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -79,6 +80,25 @@ export default async function DashboardPage({
     orderBy: { completedAt: "desc" },
     take: 5,
   });
+
+  const writingTrend = await prisma.writingSubmission.findMany({
+    where: { userId: user.id },
+    include: { evaluation: true },
+    orderBy: { createdAt: "asc" },
+    take: 10,
+  });
+  const speakingTrend = await prisma.speakingSession.findMany({
+    where: { userId: user.id, completedAt: { not: null } },
+    include: { evaluation: true },
+    orderBy: { startedAt: "asc" },
+    take: 10,
+  });
+  const writingChart = writingTrend
+    .filter((w) => w.evaluation)
+    .map((w, i) => ({ label: `#${i + 1}`, band: w.evaluation!.overallBand }));
+  const speakingChart = speakingTrend
+    .filter((s) => s.evaluation)
+    .map((s, i) => ({ label: `#${i + 1}`, band: s.evaluation!.overallBand }));
 
   return (
     <>
@@ -222,6 +242,35 @@ export default async function DashboardPage({
             ))}
           </CardContent>
         </Card>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardTitle>Writing band trend</CardTitle>
+              <CardDescription>
+                <Link href="/writing" className="text-[var(--brand)] underline">
+                  Mở Writing Gym
+                </Link>
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <BandProgressChart data={writingChart} />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Speaking band trend</CardTitle>
+              <CardDescription>
+                <Link href="/speaking" className="text-[var(--brand)] underline">
+                  Mở Speaking Gym
+                </Link>
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <BandProgressChart data={speakingChart} />
+            </CardContent>
+          </Card>
+        </div>
 
         {recentCompletions.length > 0 ? (
           <Card>
