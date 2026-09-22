@@ -1,8 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { TestType } from "@prisma/client";
 import { requireUser } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 import { AppHeader } from "@/components/app-header";
 import { PlacementBanner } from "@/components/placement-banner";
+import { BandBadge } from "@/components/placement/band-badge";
+import { SkillRadar } from "@/components/placement/skill-radar";
+import { AiDisclaimer } from "@/components/placement/ai-disclaimer";
+import { DashboardToasts } from "@/components/dashboard-toasts";
 import {
   Card,
   CardContent,
@@ -20,18 +26,41 @@ export const metadata: Metadata = {
 
 const skills = ["LISTENING", "READING", "WRITING", "SPEAKING"] as const;
 
-export default async function DashboardPage() {
+type DashboardPageProps = {
+  searchParams: Promise<{ placement?: string }>;
+};
+
+export default async function DashboardPage({
+  searchParams,
+}: DashboardPageProps) {
   const user = await requireUser();
+  const params = await searchParams;
   const profile = user.profile;
   const displayName = profile?.displayName ?? user.name ?? "bạn";
   const currentLevel = profile?.currentLevel ?? 1;
   const targetBand = profile?.targetBand ?? 6.0;
+  const placementDone = Boolean(profile?.placementCompleted);
+
+  const placementResult = placementDone
+    ? await prisma.placementResult.findUnique({ where: { userId: user.id } })
+    : null;
+
+  const fullLevelAttempt = await prisma.testAttempt.findFirst({
+    where: {
+      userId: user.id,
+      test: { type: TestType.FULL_LEVEL },
+    },
+    select: { id: true },
+  });
+
+  const canRetakePlacement = placementDone && !fullLevelAttempt;
 
   return (
     <>
       <AppHeader title="Dashboard" currentLevel={currentLevel} />
+      <DashboardToasts placementDone={params.placement === "done"} />
       <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
-        {!profile?.placementCompleted ? <PlacementBanner /> : null}
+        {!placementDone ? <PlacementBanner /> : null}
 
         <div>
           <h2 className="font-[family-name:var(--font-display)] text-2xl font-semibold tracking-tight">
@@ -41,6 +70,57 @@ export default async function DashboardPage() {
             Tiếp tục lộ trình IELTS của bạn hôm nay.
           </p>
         </div>
+
+        {placementResult ? (
+          <Card>
+            <CardHeader>
+              <CardTitle>Kết quả đầu vào</CardTitle>
+              <CardDescription>
+                Overall Band và Level đề xuất từ bài placement
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-muted-foreground">Overall</span>
+                  <BandBadge band={placementResult.overallBand} />
+                </div>
+                <p className="text-2xl font-semibold text-[var(--brand)]">
+                  Level {placementResult.recommendedLevel}
+                </p>
+                <AiDisclaimer className="text-xs text-muted-foreground" />
+                {canRetakePlacement ? (
+                  <Button
+                    variant="outline"
+                    render={<Link href="/placement?toast=1" />}
+                  >
+                    Làm lại placement
+                  </Button>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    Bạn đã bắt đầu lộ trình, không thể làm lại.
+                  </p>
+                )}
+                <Button
+                  variant="secondary"
+                  render={
+                    <Link href={`/placement/result/${placementResult.id}`} />
+                  }
+                >
+                  Xem chi tiết kết quả
+                </Button>
+              </div>
+              <SkillRadar
+                data={[
+                  { skill: "Listening", band: placementResult.listeningBand },
+                  { skill: "Reading", band: placementResult.readingBand },
+                  { skill: "Writing", band: placementResult.writingBand },
+                  { skill: "Speaking", band: placementResult.speakingBand },
+                ]}
+              />
+            </CardContent>
+          </Card>
+        ) : null}
 
         <div className="grid gap-4 md:grid-cols-2">
           <Card>
@@ -99,7 +179,7 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
 
-        {!profile?.placementCompleted ? (
+        {!placementDone ? (
           <Card>
             <CardHeader>
               <CardTitle>Bài kiểm tra đầu vào</CardTitle>
