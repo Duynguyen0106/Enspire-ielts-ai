@@ -89,7 +89,7 @@ export function WritingExamSection({
       ) : null}
 
       <textarea
-        className="min-h-[40vh] w-full rounded-xl border bg-background p-4 text-base leading-relaxed"
+        className="min-h-[50vh] w-full flex-1 rounded-xl border bg-background p-4 text-base leading-relaxed sm:min-h-[55vh] md:min-h-[60vh]"
         value={text}
         onChange={(e) =>
           current &&

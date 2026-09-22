@@ -178,9 +178,9 @@ export function ExamRunner({ attemptId }: { attemptId: string }) {
 
   return (
     <div className="space-y-4">
-      <header className="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-3 border-b bg-background/95 py-3 backdrop-blur">
-        <div>
-          <p className="font-medium">{data.test.title}</p>
+      <header className="sticky top-0 z-10 -mx-3 flex flex-wrap items-center justify-between gap-3 border-b bg-background/95 px-3 py-3 backdrop-blur sm:-mx-0 sm:px-0">
+        <div className="min-w-0 flex-1">
+          <p className="truncate font-medium">{data.test.title}</p>
           <p className="text-xs text-muted-foreground">
             Level {data.test.levelNumber} · {sectionLabel}
           </p>
