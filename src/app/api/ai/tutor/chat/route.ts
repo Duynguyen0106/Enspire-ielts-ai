@@ -1,4 +1,4 @@
-import { streamText } from "ai";
+import { streamText, createUIMessageStream, createUIMessageStreamResponse } from "ai";
 import { TutorRole } from "@prisma/client";
 import { z } from "zod";
 import { enforceRateLimit, jsonError, requireApiUser } from "@/lib/api";
@@ -55,6 +55,63 @@ function extractLatestUserText(body: z.infer<typeof bodySchema>): string | null 
     }
   }
   return null;
+}
+
+function buildOfflineTutorReply(input: {
+  level: number;
+  userText: string;
+  history: { role: string; content: string }[];
+  lessonTitle?: string;
+}): string {
+  const priorUser = input.history
+    .filter((m) => m.role === "USER" || m.role === "user")
+    .map((m) => m.content)
+    .slice(0, -1); // exclude current message already saved
+  const memoryLine =
+    priorUser.length > 0
+      ? `Mình nhớ bạn vừa hỏi: “${priorUser[priorUser.length - 1]!.slice(0, 80)}”. `
+      : "";
+
+  return [
+    `**Tutor (Level ${input.level}/9)**`,
+    ``,
+    `${memoryLine}Về câu hỏi “${input.userText.slice(0, 140)}”:`,
+    ``,
+    input.userText.toLowerCase().includes("however")
+      ? `*However* = *tuy nhiên*. Ví dụ: **I was tired. However, I finished my homework.** (Tôi mệt. Tuy nhiên, tôi vẫn hoàn thành bài tập.)`
+      : `Hãy nói lại ý chính bằng 1–2 câu tiếng Anh ngắn, rồi đối chiếu với bài ${input.lessonTitle ?? "học"}.`,
+    ``,
+    priorUser.length >= 2
+      ? `Tiếp nối các câu trước của bạn, mình gợi ý bạn viết một câu dùng từ mới vừa học.`
+      : `Bạn có thể hỏi tiếp để mình giải thích sâu hơn.`,
+  ].join("\n");
+}
+
+async function streamPlainAsUiMessage(input: {
+  text: string;
+  conversationId: string;
+}): Promise<Response> {
+  const stream = createUIMessageStream({
+    execute: async ({ writer }) => {
+      const id = `msg_${Date.now()}`;
+      writer.write({ type: "text-start", id });
+      // Stream word-by-word so the client renders incrementally
+      const parts = input.text.split(/(\s+)/);
+      for (const part of parts) {
+        if (!part) continue;
+        writer.write({ type: "text-delta", id, delta: part });
+        await new Promise((r) => setTimeout(r, 18));
+      }
+      writer.write({ type: "text-end", id });
+    },
+  });
+
+  return createUIMessageStreamResponse({
+    stream,
+    headers: {
+      "X-Conversation-Id": input.conversationId,
+    },
+  });
 }
 
 export async function POST(req: Request) {
@@ -128,16 +185,12 @@ export async function POST(req: Request) {
   const promptHash = hashPrompt(system + "\n" + userText);
 
   if (!hasOpenAIKey()) {
-    const fallback = [
-      `**Gợi ý nhanh (chế độ offline)**`,
-      ``,
-      `Bạn đang ở Level ${level}/9. Với câu hỏi: “${userText.slice(0, 120)}”`,
-      ``,
-      `Hãy thử:`,
-      `1. Viết lại ý chính bằng 1 câu tiếng Anh ngắn.`,
-      `2. So sánh với ví dụ trong bài học.`,
-      `3. Hỏi lại Tutor khi đã cấu hình OPENAI_API_KEY.`,
-    ].join("\n");
+    const fallback = buildOfflineTutorReply({
+      level,
+      userText,
+      history,
+      lessonTitle,
+    });
 
     await saveTutorMessage({
       conversationId: conversation.id,
@@ -152,11 +205,9 @@ export async function POST(req: Request) {
       response: fallback,
     });
 
-    return new Response(fallback, {
-      headers: {
-        "Content-Type": "text/plain; charset=utf-8",
-        "X-Conversation-Id": conversation.id,
-      },
+    return streamPlainAsUiMessage({
+      text: fallback,
+      conversationId: conversation.id,
     });
   }
 
@@ -190,13 +241,11 @@ export async function POST(req: Request) {
       },
     });
 
-    // Prefer UI message stream for @ai-sdk/react useChat; also expose conversation id.
-    const response = result.toUIMessageStreamResponse({
+    return result.toUIMessageStreamResponse({
       headers: {
         "X-Conversation-Id": conversation.id,
       },
     });
-    return response;
   } catch {
     const fallback =
       "Tutor tạm thời không phản hồi được. Vui lòng thử lại sau ít phút.";

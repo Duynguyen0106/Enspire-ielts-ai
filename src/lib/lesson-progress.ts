@@ -42,9 +42,12 @@ export async function isLevelUnlocked(userId: string, levelNumber: number) {
   if (levelNumber <= 1) return true;
   const profile = await prisma.profile.findUnique({ where: { userId } });
   if (!profile) return false;
-  if (levelNumber <= profile.currentLevel) return true;
 
-  // Unlock next level only if previous level has all 4 checkpoints passed
+  // Current level and below are always accessible after placement assignment.
+  // Higher levels unlock only when the previous level's 4 skill checkpoints pass.
+  if (levelNumber < profile.currentLevel) return true;
+  if (levelNumber === profile.currentLevel) return true;
+
   const prev = levelNumber - 1;
   const skills: SkillName[] = ["LISTENING", "READING", "WRITING", "SPEAKING"];
   for (const skill of skills) {

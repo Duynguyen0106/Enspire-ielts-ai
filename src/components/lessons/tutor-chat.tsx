@@ -58,7 +58,13 @@ function TutorPanel({ lessonId }: { lessonId?: string }) {
         },
         prepareSendMessagesRequest: ({ messages, body }) => {
           const last = messages[messages.length - 1];
-          const text = messageText(last as { role: string; parts?: { type: string; text?: string }[]; content?: string });
+          const text = messageText(
+            last as {
+              role: string;
+              parts?: { type: string; text?: string }[];
+              content?: string;
+            }
+          );
           return {
             body: {
               ...(body ?? {}),
@@ -68,6 +74,12 @@ function TutorPanel({ lessonId }: { lessonId?: string }) {
               messages,
             },
           };
+        },
+        fetch: async (input, init) => {
+          const res = await fetch(input, init);
+          const cid = res.headers.get("X-Conversation-Id");
+          if (cid) setConversationId(cid);
+          return res;
         },
       }),
     [lessonId, conversationId]
