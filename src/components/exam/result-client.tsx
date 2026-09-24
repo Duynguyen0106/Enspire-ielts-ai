@@ -89,7 +89,7 @@ export function ResultClient({ attemptId }: { attemptId: string }) {
       ) : null}
 
       {data.passed && data.levelNumber < 9 && data.unlockGranted ? (
-        <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+        <div className="rounded-xl border border-primary/40 bg-primary/10 p-4">
           <p className="font-medium">
             Level {data.levelNumber + 1} đã mở khóa!
           </p>
@@ -100,7 +100,7 @@ export function ResultClient({ attemptId }: { attemptId: string }) {
       ) : null}
 
       {!data.passed ? (
-        <div className="space-y-2 rounded-xl border border-orange-200 bg-orange-50 p-4">
+        <div className="space-y-2 rounded-xl border border-accent/40 bg-accent/10 p-4">
           <p className="font-medium">Kỹ năng cần cải thiện</p>
           <ul className="list-disc pl-5 text-sm">
             {(data.rawScoreJson.failedSkills ?? []).map((s) => (
@@ -171,7 +171,7 @@ export function ResultClient({ attemptId }: { attemptId: string }) {
                 {q.order}. {String(q.contentJson.prompt ?? q.contentJson.taskType ?? "Câu hỏi")}
               </p>
               {q.isCorrect != null ? (
-                <p className={q.isCorrect ? "text-emerald-700" : "text-destructive"}>
+                <p className={q.isCorrect ? "text-primary" : "text-destructive"}>
                   {q.isCorrect ? "Đúng" : "Sai"} · Đáp án:{" "}
                   {JSON.stringify(q.correctAnswerJson)} · Bạn chọn:{" "}
                   {JSON.stringify(q.userResponseJson)}

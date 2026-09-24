@@ -28,7 +28,7 @@ export function TranscriptViewer({
           return (
             <span
               key={`${part}-${i}`}
-              className={cn(isFiller && "rounded bg-amber-200/80 px-0.5 font-medium")}
+              className={cn(isFiller && "rounded bg-accent/35 px-0.5 font-medium text-accent-foreground")}
             >
               {part}
             </span>

@@ -73,10 +73,10 @@ export function AppSidebar({ user }: AppSidebarProps) {
     <Sidebar collapsible="icon">
       <SidebarHeader className="border-b border-sidebar-border px-3 py-4">
         <Link href="/dashboard" className="flex items-center gap-2 px-1">
-          <span className="flex size-8 items-center justify-center rounded-lg bg-[var(--brand)] text-sm font-bold text-white">
+          <span className="flex size-8 items-center justify-center rounded-lg bg-primary text-sm font-bold text-primary-foreground ring-1 ring-primary/40">
             V
           </span>
-          <span className="font-[family-name:var(--font-display)] text-base font-semibold tracking-tight group-data-[collapsible=icon]:hidden">
+          <span className="font-display text-base font-semibold tracking-tight group-data-[collapsible=icon]:hidden">
             VietIELTS AI
           </span>
         </Link>

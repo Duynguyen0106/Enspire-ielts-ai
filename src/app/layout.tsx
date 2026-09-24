@@ -44,7 +44,7 @@ export default function RootLayout({
   return (
     <html
       lang="vi"
-      className={`${sans.variable} ${display.variable} ${landingDisplay.variable} ${landingMono.variable} h-full`}
+      className={`dark ${sans.variable} ${display.variable} ${landingDisplay.variable} ${landingMono.variable} h-full`}
     >
       <body className="min-h-full font-sans antialiased">
         <Providers>{children}</Providers>

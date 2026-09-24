@@ -10,7 +10,12 @@ import { PostHogProvider } from "@/components/analytics/posthog-provider";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
+    <ThemeProvider
+      attribute="class"
+      defaultTheme="dark"
+      forcedTheme="dark"
+      enableSystem={false}
+    >
       <PostHogProvider>
         <TooltipProvider>
           {children}

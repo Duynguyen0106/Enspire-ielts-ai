@@ -22,15 +22,15 @@ export default async function AdminLayout({
   await requireAdminAccess();
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <aside className="hidden w-56 shrink-0 border-r p-4 md:block">
-        <p className="mb-4 text-sm font-semibold">Admin</p>
+    <div className="flex min-h-screen bg-background app-shell-bg">
+      <aside className="hidden w-56 shrink-0 border-r border-border/80 bg-sidebar/80 p-4 backdrop-blur-sm md:block">
+        <p className="mb-4 font-display text-sm font-semibold">Admin</p>
         <nav className="space-y-1 text-sm">
           {NAV.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className="block rounded-md px-2 py-1.5 hover:bg-muted"
+              className="block rounded-md px-2 py-1.5 text-sidebar-foreground hover:bg-sidebar-accent"
             >
               {item.label}
             </Link>

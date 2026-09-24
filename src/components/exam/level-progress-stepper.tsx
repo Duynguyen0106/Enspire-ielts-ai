@@ -18,10 +18,10 @@ export function LevelProgressStepper({
             <div
               className={
                 isPassed
-                  ? "flex size-8 items-center justify-center rounded-full bg-emerald-600 text-sm font-semibold text-white"
+                  ? "flex size-8 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground"
                   : isCurrent
-                    ? "flex size-8 items-center justify-center rounded-full border-2 border-[var(--brand)] text-sm font-semibold"
-                    : "flex size-8 items-center justify-center rounded-full border text-sm text-muted-foreground"
+                    ? "flex size-8 items-center justify-center rounded-full border-2 border-primary text-sm font-semibold text-primary"
+                    : "flex size-8 items-center justify-center rounded-full border border-border text-sm text-muted-foreground"
               }
             >
               {n}
@@ -29,7 +29,7 @@ export function LevelProgressStepper({
             {n < 9 ? (
               <div
                 className={
-                  isPassed ? "h-0.5 w-4 bg-emerald-600" : "h-0.5 w-4 bg-border"
+                  isPassed ? "h-0.5 w-4 bg-primary" : "h-0.5 w-4 bg-border"
                 }
               />
             ) : null}

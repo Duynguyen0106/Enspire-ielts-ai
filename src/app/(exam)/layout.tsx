@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic";
 
 export default function ExamLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="fixed inset-0 z-50 flex min-h-[100dvh] flex-col overflow-y-auto bg-background text-foreground">
+    <div className="fixed inset-0 z-50 flex min-h-[100dvh] flex-col overflow-y-auto bg-background text-foreground app-shell-bg">
       <a href="#exam-main" className="sr-only focus:not-sr-only">
         Bỏ qua đến nội dung thi
       </a>

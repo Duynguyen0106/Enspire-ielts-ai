@@ -20,8 +20,11 @@ export function SkillRadar({ data }: SkillRadarProps) {
     <div className="h-64 w-full">
       <ResponsiveContainer width="100%" height="100%">
         <RadarChart data={data}>
-          <PolarGrid />
-          <PolarAngleAxis dataKey="skill" tick={{ fontSize: 12 }} />
+          <PolarGrid stroke="var(--border)" />
+          <PolarAngleAxis
+            dataKey="skill"
+            tick={{ fontSize: 12, fill: "var(--muted-foreground)" }}
+          />
           <Radar
             name="Band"
             dataKey="band"

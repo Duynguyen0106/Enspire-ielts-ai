@@ -28,11 +28,11 @@ export default async function OnboardingPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[radial-gradient(ellipse_at_top,_#d8f3e7_0%,_#f7fbf9_50%)] px-4 py-10">
+    <div className="flex min-h-screen items-center justify-center bg-[radial-gradient(ellipse_at_top,_color-mix(in_oklab,var(--primary)_18%,transparent)_0%,_#111d20_55%)] px-4 py-10">
       <div className="w-full max-w-lg">
-        <Card>
+        <Card className="glass-card border-border/60 bg-card/70">
           <CardHeader>
-            <CardTitle className="font-[family-name:var(--font-display)]">
+            <CardTitle className="font-display">
               Thiết lập lộ trình của bạn
             </CardTitle>
             <CardDescription>

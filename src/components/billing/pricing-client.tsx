@@ -59,20 +59,20 @@ export function PricingClient({ showYearly, signedIn }: PricingClientProps) {
   return (
     <div className="mx-auto max-w-5xl space-y-10 px-4 py-12">
       <div className="text-center">
-        <h1 className="font-[family-name:var(--font-display)] text-4xl font-semibold">
+        <h1 className="font-display text-4xl font-semibold">
           Chọn gói phù hợp
         </h1>
         <p className="mt-2 text-muted-foreground">
           Bắt đầu miễn phí. Nâng cấp Pro khi sẵn sàng chinh phục cả 9 level.
         </p>
         {showYearly ? (
-          <div className="mt-6 inline-flex rounded-lg border p-1">
+          <div className="mt-6 inline-flex rounded-lg border border-border bg-card/60 p-1">
             <button
               type="button"
               className={
                 interval === "monthly"
-                  ? "rounded-md bg-[var(--brand)] px-4 py-1.5 text-sm text-white"
-                  : "px-4 py-1.5 text-sm"
+                  ? "rounded-md bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground"
+                  : "px-4 py-1.5 text-sm text-muted-foreground"
               }
               onClick={() => setInterval("monthly")}
             >
@@ -82,8 +82,8 @@ export function PricingClient({ showYearly, signedIn }: PricingClientProps) {
               type="button"
               className={
                 interval === "yearly"
-                  ? "rounded-md bg-[var(--brand)] px-4 py-1.5 text-sm text-white"
-                  : "px-4 py-1.5 text-sm"
+                  ? "rounded-md bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground"
+                  : "px-4 py-1.5 text-sm text-muted-foreground"
               }
               onClick={() => setInterval("yearly")}
             >
@@ -94,7 +94,7 @@ export function PricingClient({ showYearly, signedIn }: PricingClientProps) {
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
-        <div className="rounded-2xl border p-6">
+        <div className="glass-card rounded-2xl p-6">
           <h2 className="text-xl font-semibold">Free</h2>
           <p className="mt-2 text-3xl font-semibold">0₫</p>
           <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
@@ -109,7 +109,7 @@ export function PricingClient({ showYearly, signedIn }: PricingClientProps) {
           </Button>
         </div>
 
-        <div className="rounded-2xl border border-[var(--brand)] bg-[var(--brand-soft)]/30 p-6">
+        <div className="glass-card rounded-2xl border-primary/50 p-6 glow-primary">
           <h2 className="text-xl font-semibold">Pro</h2>
           <p className="mt-2 text-3xl font-semibold">{price}</p>
           <ul className="mt-4 space-y-2 text-sm">

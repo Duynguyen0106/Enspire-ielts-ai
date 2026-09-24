@@ -125,7 +125,7 @@ export default async function DashboardPage({
         {!placementDone ? <PlacementBanner /> : null}
 
         {graduatedAt ? (
-          <Card className="border-emerald-200 bg-emerald-50/60">
+          <Card className="border-primary/40 bg-primary/10">
             <CardHeader>
               <CardTitle>Chúc mừng — bạn đã tốt nghiệp lộ trình!</CardTitle>
               <CardDescription>
@@ -139,7 +139,7 @@ export default async function DashboardPage({
         ) : null}
 
         <div>
-          <h2 className="font-[family-name:var(--font-display)] text-2xl font-semibold tracking-tight">
+          <h2 className="font-display text-2xl font-semibold tracking-tight">
             Xin chào, {displayName}
           </h2>
           <p className="mt-1 text-muted-foreground">

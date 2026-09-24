@@ -17,8 +17,8 @@ export function SkillPassCard({
     <div
       className={
         passed
-          ? "rounded-xl border border-emerald-200 bg-emerald-50/50 p-4"
-          : "rounded-xl border border-destructive/30 bg-destructive/5 p-4"
+          ? "rounded-xl border border-primary/40 bg-primary/10 p-4"
+          : "rounded-xl border border-destructive/30 bg-destructive/10 p-4"
       }
     >
       <p className="text-sm text-muted-foreground">{labelVi}</p>

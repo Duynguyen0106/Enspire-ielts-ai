@@ -37,19 +37,19 @@ export function ResultHero({
     <div
       className={
         passed
-          ? "rounded-2xl bg-emerald-50 p-8 text-center"
-          : "rounded-2xl bg-orange-50 p-8 text-center"
+          ? "rounded-2xl border border-primary/40 bg-primary/10 p-8 text-center"
+          : "rounded-2xl border border-accent/40 bg-accent/10 p-8 text-center"
       }
     >
       <p className="text-sm text-muted-foreground">Overall band</p>
-      <p className="mt-2 font-[family-name:var(--font-display)] text-6xl font-semibold text-[var(--brand)]">
+      <p className="mt-2 font-display text-6xl font-semibold text-primary">
         {shown.toFixed(1)}
       </p>
       <p
         className={
           passed
-            ? "mt-4 text-lg font-semibold text-emerald-700"
-            : "mt-4 text-lg font-semibold text-orange-700"
+            ? "mt-4 text-lg font-semibold text-primary"
+            : "mt-4 text-lg font-semibold text-accent"
         }
       >
         {passed ? "PASSED" : "FAILED"}

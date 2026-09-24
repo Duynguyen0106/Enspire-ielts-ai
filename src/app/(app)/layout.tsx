@@ -20,7 +20,7 @@ export default async function AppLayout({
           image: user.image,
         }}
       />
-      <SidebarInset className="min-h-svh bg-[linear-gradient(180deg,#f7fbf9_0%,#ffffff_28%)]">
+      <SidebarInset className="app-shell-bg min-h-svh bg-background/80">
         {children}
       </SidebarInset>
     </SidebarProvider>
