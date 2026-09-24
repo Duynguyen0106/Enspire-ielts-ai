@@ -38,7 +38,12 @@ export function WritingNewClient({ taskType, level }: WritingNewClientProps) {
         `/api/writing/prompts?taskType=${taskType}&level=${level}`
       );
       const data = (await res.json()) as { prompts: Prompt[] };
-      setPrompts(data.prompts ?? []);
+      const list = data.prompts ?? [];
+      setPrompts(list);
+      // Auto-pick so users aren't stuck on an empty editor screen
+      if (list.length > 0) {
+        setSelected(list[Math.floor(Math.random() * list.length)]!);
+      }
     })();
   }, [taskType, level]);
 
@@ -180,9 +185,11 @@ export function WritingNewClient({ taskType, level }: WritingNewClientProps) {
         >
           {submitting
             ? "Đang nộp…"
-            : underMin
-              ? "Nộp bài (dưới số từ)"
-              : "Nộp bài"}
+            : !selected
+              ? "Chọn đề để nộp bài"
+              : underMin
+                ? "Nộp bài (dưới số từ)"
+                : "Nộp bài"}
         </Button>
         {step ? (
           <p className="animate-pulse text-sm text-muted-foreground">{step}</p>

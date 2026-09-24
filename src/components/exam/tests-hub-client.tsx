@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { LevelProgressStepper } from "@/components/exam/level-progress-stepper";
 import { CooldownTimer } from "@/components/exam/cooldown-timer";
 import { Button } from "@/components/ui/button";
+import { LinkButton } from "@/components/ui/link-button";
 import {
   Card,
   CardContent,
@@ -198,13 +198,9 @@ export function TestsHubClient({ currentLevel }: { currentLevel: number }) {
 function PracticeCta({ exam }: { exam: PracticeExam }) {
   if (exam.inProgressAttemptId) {
     return (
-      <Button
-        render={
-          <Link href={`/tests/attempts/${exam.inProgressAttemptId}/run`} />
-        }
-      >
+      <LinkButton href={`/tests/attempts/${exam.inProgressAttemptId}/run`}>
         Tiếp tục đề thử
-      </Button>
+      </LinkButton>
     );
   }
   const cooling =
@@ -212,14 +208,12 @@ function PracticeCta({ exam }: { exam: PracticeExam }) {
   if (cooling && exam.lastAttemptId) {
     return (
       <div className="flex flex-wrap gap-2">
-        <Button
+        <LinkButton
           variant="outline"
-          render={
-            <Link href={`/tests/attempts/${exam.lastAttemptId}/result`} />
-          }
+          href={`/tests/attempts/${exam.lastAttemptId}/result`}
         >
           Xem kết quả
-        </Button>
+        </LinkButton>
         <Button variant="outline" disabled>
           <CooldownTimer until={exam.cooldownUntil!} />
         </Button>
@@ -229,16 +223,14 @@ function PracticeCta({ exam }: { exam: PracticeExam }) {
   return (
     <div className="flex flex-wrap gap-2">
       {exam.lastAttemptId ? (
-        <Button
+        <LinkButton
           variant="outline"
-          render={<Link href={`/tests/attempts/${exam.lastAttemptId}/result`} />}
+          href={`/tests/attempts/${exam.lastAttemptId}/result`}
         >
           Xem kết quả
-        </Button>
+        </LinkButton>
       ) : null}
-      <Button render={<Link href={`/tests/${exam.testId}/intro`} />}>
-        Bắt đầu đề thử
-      </Button>
+      <LinkButton href={`/tests/${exam.testId}/intro`}>Bắt đầu đề thử</LinkButton>
     </div>
   );
 }
@@ -247,21 +239,18 @@ function StatusCta({ item }: { item: LevelItem }) {
   switch (item.status) {
     case "locked":
       return (
-        <Button variant="outline" render={<Link href={`/levels/${item.levelNumber - 1 || 1}`} />}>
+        <LinkButton
+          variant="outline"
+          href={`/levels/${item.levelNumber - 1 || 1}`}
+        >
           Hoàn thành Level {item.levelNumber - 1} để mở khóa
-        </Button>
+        </LinkButton>
       );
     case "in_progress":
       return (
-        <Button
-          render={
-            <Link
-              href={`/tests/attempts/${item.inProgressAttemptId}/run`}
-            />
-          }
-        >
+        <LinkButton href={`/tests/attempts/${item.inProgressAttemptId}/run`}>
           Tiếp tục thi
-        </Button>
+        </LinkButton>
       );
     case "cooldown":
       return (
@@ -277,31 +266,25 @@ function StatusCta({ item }: { item: LevelItem }) {
       return (
         <div className="flex flex-wrap gap-2">
           {item.lastAttemptId ? (
-            <Button
+            <LinkButton
               variant="outline"
-              render={
-                <Link href={`/tests/attempts/${item.lastAttemptId}/result`} />
-              }
+              href={`/tests/attempts/${item.lastAttemptId}/result`}
             >
               Xem kết quả
-            </Button>
+            </LinkButton>
           ) : null}
-          <Button render={<Link href={`/tests/${item.testId}/intro`} />}>
+          <LinkButton href={`/tests/${item.testId}/intro`}>
             Thi lại để cải thiện
-          </Button>
+          </LinkButton>
         </div>
       );
     case "failed":
       return (
-        <Button render={<Link href={`/tests/${item.testId}/intro`} />}>
-          Thi lại
-        </Button>
+        <LinkButton href={`/tests/${item.testId}/intro`}>Thi lại</LinkButton>
       );
     default:
       return (
-        <Button render={<Link href={`/tests/${item.testId}/intro`} />}>
-          Bắt đầu thi
-        </Button>
+        <LinkButton href={`/tests/${item.testId}/intro`}>Bắt đầu thi</LinkButton>
       );
   }
 }

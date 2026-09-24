@@ -414,7 +414,7 @@ async function upsertLessonTrack(input: {
 
 export async function seedLessons(options?: { sample?: boolean }) {
   const sample = options?.sample ?? process.argv.includes("--sample");
-  const levels = sample ? [1, 2] : [1, 2, 3, 4, 5, 6, 7, 8, 9];
+  const levels = sample ? [1, 2, 3] : [1, 2, 3, 4, 5, 6, 7, 8, 9];
   const skills: SkillName[] = [
     SkillName.LISTENING,
     SkillName.READING,
@@ -424,7 +424,7 @@ export async function seedLessons(options?: { sample?: boolean }) {
   const useAi = Boolean(process.env.OPENAI_API_KEY?.trim()) && !sample;
 
   console.log(
-    `Seeding lessons (${sample ? "sample L1–L2" : "full L1–L9"}, AI=${useAi})…`
+    `Seeding lessons (${sample ? "sample L1–L3" : "full L1–L9"}, AI=${useAi})…`
   );
 
   // Clear prior sample embeddings so re-seed is deterministic
