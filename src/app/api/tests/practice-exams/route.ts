@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireApiUser, jsonError } from "@/lib/api";
+import { requireApiUser } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
 
 function asRecord(v: unknown): Record<string, unknown> {

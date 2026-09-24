@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireApiUser, jsonError } from "@/lib/api";
+import { requireApiUser } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
 import { isLevelUnlocked, ensurePlacementUnlocks } from "@/lib/unlock";
 import { parsePassingRules } from "@/lib/ielts-scoring";
