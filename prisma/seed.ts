@@ -3,6 +3,8 @@ import { hash } from "bcryptjs";
 import { seedPlacement } from "./seed-placement";
 import { seedLessons } from "./seed-lessons";
 import { seedWritingContent } from "./seed-writing-prompts";
+import { seedFullTests } from "./seed-full-tests";
+import { seedPracticeExams } from "./seed-practice-exams";
 
 const prisma = new PrismaClient();
 
@@ -133,16 +135,61 @@ async function main() {
     },
   });
 
+  const DEFAULT_FLAGS = [
+    {
+      key: "new_tutor_model",
+      enabled: false,
+      description: "Use alternate tutor model",
+    },
+    {
+      key: "enable_ai_followups_in_speaking",
+      enabled: false,
+      description: "AI follow-up questions in speaking",
+    },
+    {
+      key: "enable_yearly_plan",
+      enabled: true,
+      description: "Show yearly pricing option",
+    },
+    {
+      key: "strict_pronunciation_disclaimer",
+      enabled: true,
+      description: "Show pronunciation estimate disclaimer",
+    },
+    {
+      key: "beta_reading_generator",
+      enabled: false,
+      description: "Beta reading practice generator",
+    },
+  ] as const;
+  for (const flag of DEFAULT_FLAGS) {
+    await prisma.featureFlag.upsert({
+      where: { key: flag.key },
+      update: { description: flag.description },
+      create: {
+        key: flag.key,
+        enabled: flag.enabled,
+        description: flag.description,
+      },
+    });
+  }
+
   console.log("Seed completed:");
   console.log(`- ${levels.length} levels`);
   console.log(`- ${skills.length} skills`);
   console.log(`- Admin user: ${admin.email}`);
+  console.log(`- ${DEFAULT_FLAGS.length} feature flags`);
 
   await seedPlacement();
 
   const sample = process.argv.includes("--sample");
   await seedLessons({ sample: sample || !process.env.OPENAI_API_KEY?.trim() });
   await seedWritingContent();
+
+  // Full-level tests: seed Level 1 by default; use --full-tests for all 1–9
+  const fullAll = process.argv.includes("--full-tests");
+  await seedFullTests(fullAll ? null : 1);
+  await seedPracticeExams();
 }
 
 main()

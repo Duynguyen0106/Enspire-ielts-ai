@@ -14,6 +14,8 @@ import {
   computeLessonProgress,
   isLevelUnlocked,
 } from "@/lib/lesson-progress";
+import { canUse } from "@/lib/entitlements";
+import { isAdminUser, studentVisibleReview } from "@/lib/content-filter";
 
 type LevelPageProps = {
   params: Promise<{ level: string }>;
@@ -37,6 +39,14 @@ export default async function LevelDetailPage({ params }: LevelPageProps) {
     notFound();
   }
 
+  const entitlement = await canUse(user.id, "LESSON_ACCESS", {
+    level: levelNumber,
+    consume: false,
+  });
+  if (!entitlement.allowed) {
+    notFound();
+  }
+
   const unlocked = await isLevelUnlocked(user.id, levelNumber);
   if (!unlocked && levelNumber !== currentLevel) {
     notFound();
@@ -51,6 +61,9 @@ export default async function LevelDetailPage({ params }: LevelPageProps) {
     (typeof skillRows)[number]
   >;
 
+  const admin = isAdminUser(user);
+  const reviewStatus = studentVisibleReview(admin);
+
   const tracks = await Promise.all(
     skills.map(async (skill) => {
       const skillRow = byName[skill];
@@ -60,6 +73,7 @@ export default async function LevelDetailPage({ params }: LevelPageProps) {
               levelId: level.id,
               skillId: skillRow.id,
               publishedAt: { not: null },
+              reviewStatus,
             },
             orderBy: { order: "asc" },
           })

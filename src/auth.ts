@@ -41,7 +41,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           where: { email: parsed.data.email.toLowerCase() },
         });
 
-        if (!user?.passwordHash) {
+        if (!user?.passwordHash || user.deletedAt) {
           return null;
         }
 

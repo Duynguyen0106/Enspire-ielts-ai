@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { enforceRateLimit, jsonError, requireApiUser } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
 import { lessonExerciseSchema } from "@/lib/ai/lesson-schemas";
+import { isAdminUser, studentVisibleReview } from "@/lib/content-filter";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -13,6 +14,7 @@ export async function GET(_req: Request, context: RouteContext) {
   if (limited) return limited;
 
   const { id } = await context.params;
+  const admin = isAdminUser(user);
   const lesson = await prisma.lesson.findUnique({
     where: { id },
     include: {
@@ -21,8 +23,25 @@ export async function GET(_req: Request, context: RouteContext) {
       exercises: { orderBy: { order: "asc" } },
     },
   });
-  if (!lesson || !lesson.publishedAt) {
+  const visible = studentVisibleReview(admin);
+  const statusOk =
+    typeof visible === "string"
+      ? lesson?.reviewStatus === visible
+      : Boolean(lesson && visible.in.includes(lesson.reviewStatus));
+  if (!lesson || !lesson.publishedAt || !statusOk) {
     return jsonError("Không tìm thấy bài học.", 404);
+  }
+
+  const { requireEntitlement } = await import("@/lib/entitlements");
+  const gate = await requireEntitlement(user.id, "LESSON_ACCESS", {
+    level: lesson.level.number,
+    consume: false,
+  });
+  if (!gate.allowed) {
+    return jsonError(gate.reason ?? "Paywall", 402, {
+      feature: "LESSON_ACCESS",
+      remaining: gate.remaining,
+    });
   }
 
   const completion = await prisma.lessonCompletion.findUnique({

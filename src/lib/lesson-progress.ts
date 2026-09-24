@@ -13,7 +13,12 @@ export async function computeLessonProgress(
   }
 
   const lessons = await prisma.lesson.findMany({
-    where: { levelId: level.id, skillId: skillRow.id, publishedAt: { not: null } },
+    where: {
+      levelId: level.id,
+      skillId: skillRow.id,
+      publishedAt: { not: null },
+      reviewStatus: "APPROVED",
+    },
     select: { id: true, isCheckpoint: true },
   });
   const completions = await prisma.lessonCompletion.findMany({
@@ -65,7 +70,11 @@ export async function getNextUnfinishedLesson(
   if (!level) return null;
 
   const lessons = await prisma.lesson.findMany({
-    where: { levelId: level.id, publishedAt: { not: null } },
+    where: {
+      levelId: level.id,
+      publishedAt: { not: null },
+      reviewStatus: "APPROVED",
+    },
     include: { skill: true },
     orderBy: [{ skill: { name: "asc" } }, { order: "asc" }],
   });

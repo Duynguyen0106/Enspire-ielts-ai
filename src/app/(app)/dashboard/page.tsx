@@ -100,12 +100,43 @@ export default async function DashboardPage({
     .filter((s) => s.evaluation)
     .map((s, i) => ({ label: `#${i + 1}`, band: s.evaluation!.overallBand }));
 
+  const fullLevelTest = await prisma.test.findFirst({
+    where: {
+      type: TestType.FULL_LEVEL,
+      level: { number: currentLevel },
+      publishedAt: { not: null },
+    },
+    include: {
+      attempts: {
+        where: { userId: user.id },
+        orderBy: { startedAt: "desc" },
+        take: 1,
+      },
+    },
+  });
+  const lastFull = fullLevelTest?.attempts[0];
+  const graduatedAt = profile?.graduatedAt;
+
   return (
     <>
       <AppHeader title="Dashboard" currentLevel={currentLevel} />
       <DashboardToasts placementDone={params.placement === "done"} />
       <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
         {!placementDone ? <PlacementBanner /> : null}
+
+        {graduatedAt ? (
+          <Card className="border-emerald-200 bg-emerald-50/60">
+            <CardHeader>
+              <CardTitle>Chúc mừng — bạn đã tốt nghiệp lộ trình!</CardTitle>
+              <CardDescription>
+                Hoàn thành Level 9
+                {profile?.bestFullTestBand != null
+                  ? ` · Best band ${profile.bestFullTestBand.toFixed(1)}`
+                  : ""}
+              </CardDescription>
+            </CardHeader>
+          </Card>
+        ) : null}
 
         <div>
           <h2 className="font-[family-name:var(--font-display)] text-2xl font-semibold tracking-tight">
@@ -132,6 +163,51 @@ export default async function DashboardPage({
             </CardContent>
           </Card>
         ) : null}
+
+        {fullLevelTest ? (
+          <Card>
+            <CardHeader>
+              <CardTitle>Bài thi cấp độ</CardTitle>
+              <CardDescription>
+                Level {currentLevel} · {fullLevelTest.title}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-sm text-muted-foreground">
+                {lastFull?.passed === true
+                  ? `Đã đạt · band ${lastFull.overallBand?.toFixed(1) ?? "—"}`
+                  : lastFull?.passed === false
+                    ? `Chưa đạt · band ${lastFull.overallBand?.toFixed(1) ?? "—"}`
+                    : lastFull?.status === "IN_PROGRESS"
+                      ? "Đang làm dở"
+                      : "Sẵn sàng thi (~75 phút)"}
+              </p>
+              <Button
+                render={
+                  <Link
+                    href={
+                      lastFull?.status === "IN_PROGRESS"
+                        ? `/tests/attempts/${lastFull.id}/run`
+                        : `/tests/${fullLevelTest.id}/intro`
+                    }
+                  />
+                }
+              >
+                {lastFull?.status === "IN_PROGRESS" ? "Tiếp tục thi" : "Vào bài thi"}
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card>
+            <CardHeader>
+              <CardTitle>Bài thi cấp độ</CardTitle>
+              <CardDescription>Xem tất cả level trên trang Bài kiểm tra</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button render={<Link href="/tests" />}>Xem bài thi</Button>
+            </CardContent>
+          </Card>
+        )}
 
         {placementResult ? (
           <Card>

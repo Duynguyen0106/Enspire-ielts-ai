@@ -58,6 +58,10 @@ export async function enforceDailyRateLimit(
   return null;
 }
 
-export function jsonError(message: string, status = 400) {
-  return NextResponse.json({ error: message }, { status });
+export function jsonError(
+  message: string,
+  status = 400,
+  extra?: Record<string, unknown>
+) {
+  return NextResponse.json({ error: message, ...extra }, { status });
 }

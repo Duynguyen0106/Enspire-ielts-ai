@@ -14,6 +14,10 @@ export async function getCurrentUser() {
     include: { profile: true },
   });
 
+  if (!user || user.deletedAt) {
+    return null;
+  }
+
   return user;
 }
 

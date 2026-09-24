@@ -7,6 +7,17 @@ export async function POST() {
   const { user, error } = await requireApiUser();
   if (error || !user) return error!;
 
+  const { requireEntitlement } = await import("@/lib/entitlements");
+  const gate = await requireEntitlement(user.id, "PLACEMENT_TEST", {
+    consume: !user.profile?.placementCompleted,
+  });
+  if (!gate.allowed) {
+    return jsonError(gate.reason ?? "Paywall", 402, {
+      feature: "PLACEMENT_TEST",
+      remaining: gate.remaining,
+    });
+  }
+
   if (user.profile?.placementCompleted) {
     const fullLevelAttempt = await prisma.testAttempt.findFirst({
       where: {

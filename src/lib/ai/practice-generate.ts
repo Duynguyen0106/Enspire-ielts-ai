@@ -149,10 +149,8 @@ async function ensurePracticeAudio(script: string, level: number): Promise<strin
       // fall through to wav
     }
   }
-  const dir = path.join(process.cwd(), "public", "audio", "practice");
-  await mkdir(dir, { recursive: true });
-  const filename = `${key}.wav`;
-  // tiny wav
+
+  // Tiny silent WAV — prefer data URL so Vercel/serverless (read-only FS) still works.
   const sampleRate = 8000;
   const numSamples = sampleRate;
   const dataSize = numSamples * 2;
@@ -170,8 +168,22 @@ async function ensurePracticeAudio(script: string, level: number): Promise<strin
   buffer.writeUInt16LE(16, 34);
   buffer.write("data", 36);
   buffer.writeUInt32LE(dataSize, 40);
-  await writeFile(path.join(dir, filename), buffer);
-  return `/audio/practice/${filename}`;
+
+  try {
+    const stored = await storeAudio({
+      bytes: buffer,
+      contentType: "audio/wav",
+      extension: "wav",
+    });
+    return stored.url;
+  } catch {
+    // Last resort: try local public folder (dev only)
+    const dir = path.join(process.cwd(), "public", "audio", "practice");
+    await mkdir(dir, { recursive: true });
+    const filename = `${key}.wav`;
+    await writeFile(path.join(dir, filename), buffer);
+    return `/audio/practice/${filename}`;
+  }
 }
 
 async function generateSection(skill: "LISTENING" | "READING", level: number) {
@@ -215,6 +227,21 @@ export function createPracticeHandler(skill: "LISTENING" | "READING") {
 
     const limited = await enforceRateLimit(user.id, `practice-gen-${skill}`, 5);
     if (limited) return limited;
+
+    const { requireEntitlement } = await import("@/lib/entitlements");
+    const levelForGate = user.profile?.currentLevel ?? 1;
+    const gate = await requireEntitlement(
+      user.id,
+      "LISTENING_READING_PRACTICE",
+      { level: levelForGate }
+    );
+    if (!gate.allowed) {
+      const { jsonError } = await import("@/lib/api");
+      return jsonError(gate.reason ?? "Paywall", 402, {
+        feature: "LISTENING_READING_PRACTICE",
+        remaining: gate.remaining,
+      });
+    }
 
     let forceNew = false;
     try {

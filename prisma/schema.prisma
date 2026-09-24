@@ -23,12 +23,28 @@ enum TestType {
   PLACEMENT
   FULL_LEVEL
   CHECKPOINT
+  /// Unofficial Academic mock exams (original content, IELTS-format practice)
+  PRACTICE_EXAM
 }
 
 enum AttemptStatus {
   IN_PROGRESS
   SUBMITTED
   SCORED
+  ABANDONED
+}
+
+enum ScoringStatus {
+  NOT_STARTED
+  SCORING
+  SCORED
+  FAILED
+}
+
+enum UnlockSource {
+  PLACEMENT
+  TEST_PASS
+  ADMIN
 }
 
 enum TutorRole {
@@ -56,6 +72,33 @@ enum SpeakingSessionType {
   FULL_TEST
 }
 
+enum Plan {
+  FREE
+  PRO
+}
+
+enum UsagePeriod {
+  DAY
+  WEEK
+  MONTH
+  LIFETIME
+}
+
+enum ContentReviewRefType {
+  LESSON
+  TEST
+  QUESTION
+  PASSAGE
+  AUDIO
+}
+
+enum ContentReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  NEEDS_EDIT
+}
+
 model User {
   id            String    @id @default(cuid())
   email         String    @unique
@@ -64,6 +107,7 @@ model User {
   passwordHash  String?
   role          Role      @default(USER)
   emailVerified DateTime?
+  deletedAt     DateTime?
   createdAt     DateTime  @default(now())
 
   accounts    Account[]
@@ -78,6 +122,10 @@ model User {
   tutorConversations TutorConversation[]
   writingSubmissions WritingSubmission[]
   speakingSessions   SpeakingSession[]
+  levelUnlocks       LevelUnlock[]
+  usageLogs          UsageLog[]
+  adminActions       AdminAction[] @relation("AdminActor")
+  contentReviews     ContentReview[] @relation("ContentReviewer")
 }
 
 model Account {
@@ -116,16 +164,18 @@ model VerificationToken {
 }
 
 model Profile {
-  id                 String   @id @default(cuid())
-  userId             String   @unique
+  id                 String    @id @default(cuid())
+  userId             String    @unique
   displayName        String?
-  nativeLanguage     String   @default("vi")
+  nativeLanguage     String    @default("vi")
   targetBand         Float?
-  currentLevel       Int      @default(1)
-  placementCompleted Boolean  @default(false)
+  currentLevel       Int       @default(1)
+  placementCompleted Boolean   @default(false)
   weakSkills         SkillName[]
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  graduatedAt        DateTime?
+  bestFullTestBand   Float?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
@@ -140,6 +190,7 @@ model Level {
   lessons  Lesson[]
   tests    Test[]
   progress Progress[]
+  unlocks  LevelUnlock[]
 }
 
 model Skill {
@@ -153,7 +204,7 @@ model Skill {
 }
 
 model Lesson {
-  id            String    @id @default(cuid())
+  id            String              @id @default(cuid())
   levelId       String
   skillId       String
   title         String
@@ -161,8 +212,9 @@ model Lesson {
   order         Int
   contentJson   Json?
   publishedAt   DateTime?
-  isCheckpoint  Boolean   @default(false)
-  estimatedMin  Int       @default(15)
+  isCheckpoint  Boolean             @default(false)
+  estimatedMin  Int                 @default(15)
+  reviewStatus  ContentReviewStatus @default(APPROVED)
 
   level       Level              @relation(fields: [levelId], references: [id], onDelete: Cascade)
   skill       Skill              @relation(fields: [skillId], references: [id], onDelete: Cascade)
@@ -187,16 +239,20 @@ model Exercise {
 }
 
 model Test {
-  id          String    @id @default(cuid())
-  levelId     String?
-  type        TestType
-  title       String
-  durationMin Int
-  publishedAt DateTime?
+  id               String    @id @default(cuid())
+  levelId          String?
+  type             TestType
+  title            String
+  durationMin      Int
+  publishedAt      DateTime?
+  /// { minOverallBand: number, minSkillBand: number }
+  passingRulesJson Json?
 
   level    Level?         @relation(fields: [levelId], references: [id], onDelete: SetNull)
   sections TestSection[]
   attempts TestAttempt[]
+
+  @@unique([levelId, type])
 }
 
 model TestSection {
@@ -208,9 +264,10 @@ model TestSection {
   instructionsVi String?
   metadataJson   Json?
 
-  test      Test       @relation(fields: [testId], references: [id], onDelete: Cascade)
-  skill     Skill      @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  test      Test                  @relation(fields: [testId], references: [id], onDelete: Cascade)
+  skill     Skill                 @relation(fields: [skillId], references: [id], onDelete: Cascade)
   questions Question[]
+  progress  TestSectionProgress[]
 
   @@unique([testId, order])
 }
@@ -231,20 +288,54 @@ model Question {
 }
 
 model TestAttempt {
-  id           String        @id @default(cuid())
-  userId       String
-  testId       String
-  startedAt    DateTime      @default(now())
-  submittedAt  DateTime?
-  status       AttemptStatus @default(IN_PROGRESS)
-  overallBand  Float?
-  rawScoreJson Json?
+  id              String         @id @default(cuid())
+  userId          String
+  testId          String
+  startedAt       DateTime       @default(now())
+  submittedAt     DateTime?
+  status          AttemptStatus  @default(IN_PROGRESS)
+  scoringStatus   ScoringStatus  @default(NOT_STARTED)
+  scoringError    String?
+  scoringRetries  Int            @default(0)
+  passed          Boolean?
+  unlockGranted   Boolean        @default(false)
+  cooldownUntil   DateTime?
+  overallBand     Float?
+  rawScoreJson    Json?
 
-  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  test            Test             @relation(fields: [testId], references: [id], onDelete: Cascade)
+  user            User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  test            Test                  @relation(fields: [testId], references: [id], onDelete: Cascade)
   answers         Answer[]
   feedback        AIFeedback[]
   placementResult PlacementResult?
+  sectionProgress TestSectionProgress[]
+}
+
+model LevelUnlock {
+  id         String       @id @default(cuid())
+  userId     String
+  levelId    String
+  unlockedAt DateTime     @default(now())
+  unlockedBy UnlockSource
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  level Level @relation(fields: [levelId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, levelId])
+}
+
+model TestSectionProgress {
+  id           String    @id @default(cuid())
+  attemptId    String
+  sectionId    String
+  startedAt    DateTime?
+  submittedAt  DateTime?
+  timeSpentSec Int?
+
+  attempt TestAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  section TestSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+
+  @@unique([attemptId, sectionId])
 }
 
 model Answer {
@@ -294,14 +385,81 @@ model Progress {
 }
 
 model Subscription {
-  id               String    @id @default(cuid())
-  userId           String    @unique
-  stripeCustomerId String?
-  stripeSubId      String?
-  status           String    @default("inactive")
-  currentPeriodEnd DateTime?
+  id                 String    @id @default(cuid())
+  userId             String    @unique
+  plan               Plan      @default(FREE)
+  stripeCustomerId   String?
+  stripeSubId        String?
+  priceId            String?
+  interval           String?
+  status             String    @default("inactive")
+  currentPeriodEnd   DateTime?
+  cancelAtPeriodEnd  Boolean   @default(false)
+  trialEndsAt        DateTime?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model UsageLog {
+  id          String      @id @default(cuid())
+  userId      String
+  feature     String
+  count       Int         @default(0)
+  periodStart DateTime
+  periodEnd   DateTime
+  period      UsagePeriod
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, feature, periodStart])
+  @@index([userId, feature])
+}
+
+model AdminAction {
+  id          String   @id @default(cuid())
+  adminUserId String
+  action      String
+  targetType  String
+  targetId    String?
+  payloadJson Json?
+  createdAt   DateTime @default(now())
+
+  admin User @relation("AdminActor", fields: [adminUserId], references: [id], onDelete: Cascade)
+
+  @@index([adminUserId, createdAt])
+  @@index([action, createdAt])
+}
+
+model ContentReview {
+  id               String               @id @default(cuid())
+  refType          ContentReviewRefType
+  refId            String
+  status           ContentReviewStatus  @default(PENDING)
+  reviewedByUserId String?
+  reviewedAt       DateTime?
+  notesVi          String?
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+
+  reviewer User? @relation("ContentReviewer", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([status, refType, createdAt])
+  @@unique([refType, refId])
+}
+
+model FeatureFlag {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  enabled     Boolean  @default(false)
+  description String?
+  updatedAt   DateTime @updatedAt
+  createdAt   DateTime @default(now())
+}
+
+model StripeEvent {
+  id        String   @id
+  type      String
+  createdAt DateTime @default(now())
 }
 
 model PlacementResult {
