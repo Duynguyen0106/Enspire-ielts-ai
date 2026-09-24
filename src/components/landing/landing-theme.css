@@ -1,0 +1,138 @@
+/* OsteoTutor-inspired landing theme (scoped — does not restyle the signed-in app) */
+.landing-theme {
+  --background: #111d20;
+  --foreground: #f4f2ea;
+  --surface: #162427;
+  --card: #1c2c2f;
+  --card-foreground: #f4f2ea;
+  --popover: #1c2c2f;
+  --popover-foreground: #f4f2ea;
+  --primary: #4ab8b5;
+  --primary-foreground: #001517;
+  --secondary: #263639;
+  --secondary-foreground: #edebe4;
+  --accent: #e1b671;
+  --accent-foreground: #261704;
+  --muted: #283538;
+  --muted-foreground: #a3b5b6;
+  --destructive: #f3625d;
+  --border: #90abac38;
+  --input: #33464973;
+  --ring: #4ab8b5;
+  --neon-pink: #e1b671;
+  --neon-cyan: #4ab8b5;
+  --glow-pink: 0 0 0 1px #e1b67166, 0 0 14px -6px #e1b67152, inset 0 0 0 1px #e1b6710f;
+  --glow-primary: 0 0 0 1px #4ab8b566, 0 0 16px -6px #4ab8b559;
+  --font-display: var(--font-landing-display), var(--font-sans), ui-sans-serif, system-ui,
+    sans-serif;
+  --font-mono: var(--font-landing-mono), ui-monospace, monospace;
+  color: var(--foreground);
+  background: var(--background);
+  font-family: var(--font-sans), "Be Vietnam Pro", ui-sans-serif, system-ui, sans-serif;
+}
+
+.landing-theme .font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.018em;
+  line-height: 1.2;
+}
+
+.landing-theme .font-mono {
+  font-family: var(--font-mono);
+}
+
+.landing-theme .neon-text {
+  color: var(--neon-pink);
+  text-shadow: 0 0 24px color-mix(in oklab, var(--neon-pink) 35%, transparent);
+}
+
+.landing-theme .neon-panel {
+  position: relative;
+  background: color-mix(in oklab, var(--card) 60%, transparent);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  backdrop-filter: blur(14px) saturate(140%);
+  border: 1px solid color-mix(in oklab, var(--neon-pink) 70%, transparent);
+  box-shadow: var(--glow-pink);
+}
+
+.landing-theme .neon-panel::before,
+.landing-theme .neon-panel::after {
+  content: "";
+  pointer-events: none;
+  width: 14px;
+  height: 14px;
+  position: absolute;
+}
+
+.landing-theme .neon-panel::before {
+  border-top: 1px solid var(--neon-pink);
+  border-left: 1px solid var(--neon-pink);
+  top: -1px;
+  left: -1px;
+}
+
+.landing-theme .neon-panel::after {
+  border-bottom: 1px solid var(--neon-pink);
+  border-right: 1px solid var(--neon-pink);
+  bottom: -1px;
+  right: -1px;
+}
+
+.landing-theme .glow-primary {
+  box-shadow: var(--glow-primary);
+}
+
+.landing-theme .glass-card {
+  background: color-mix(in oklab, var(--card) 72%, transparent);
+  border: 1px solid color-mix(in oklab, var(--border) 80%, transparent);
+  backdrop-filter: blur(10px);
+}
+
+.landing-theme .landing-demo-scene {
+  animation: landing-demo-slide 420ms ease-out both;
+}
+
+@keyframes landing-demo-slide {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes landing-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.landing-theme .landing-fade {
+  animation: landing-fade-up 0.7s ease-out both;
+}
+
+.landing-theme .landing-fade-d1 {
+  animation: landing-fade-up 0.75s ease-out 0.1s both;
+}
+
+.landing-theme .landing-fade-d2 {
+  animation: landing-fade-up 0.8s ease-out 0.2s both;
+}
+
+.landing-theme .landing-fade-d3 {
+  animation: landing-fade-up 0.85s ease-out 0.32s both;
+}
+
+.landing-theme .landing-grid-bg {
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -10%, color-mix(in oklab, var(--primary) 18%, transparent), transparent 55%),
+    radial-gradient(ellipse 60% 40% at 90% 20%, color-mix(in oklab, var(--neon-pink) 10%, transparent), transparent 50%),
+    linear-gradient(180deg, #111d20 0%, #0d1719 100%);
+}

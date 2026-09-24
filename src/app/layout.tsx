@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Be_Vietnam_Pro, Literata } from "next/font/google";
+import { Be_Vietnam_Pro, Literata, Sora, JetBrains_Mono } from "next/font/google";
 import { Providers } from "@/components/providers";
 import "./globals.css";
 
@@ -13,6 +13,18 @@ const display = Literata({
   variable: "--font-display",
   subsets: ["latin", "vietnamese"],
   weight: ["500", "600", "700"],
+});
+
+const landingDisplay = Sora({
+  variable: "--font-landing-display",
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
+});
+
+const landingMono = JetBrains_Mono({
+  variable: "--font-landing-mono",
+  subsets: ["latin"],
+  weight: ["400", "500"],
 });
 
 export const metadata: Metadata = {
@@ -30,7 +42,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="vi" className={`${sans.variable} ${display.variable} h-full`}>
+    <html
+      lang="vi"
+      className={`${sans.variable} ${display.variable} ${landingDisplay.variable} ${landingMono.variable} h-full`}
+    >
       <body className="min-h-full font-sans antialiased">
         <Providers>{children}</Providers>
       </body>
