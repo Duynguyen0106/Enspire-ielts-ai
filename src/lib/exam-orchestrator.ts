@@ -31,24 +31,30 @@ export async function canStartAttempt(
     where: { id: testId },
     include: { level: true },
   });
-  if (!test || test.type !== "FULL_LEVEL" || !test.level) {
-    return { ok: false, status: 404, reason: "Không tìm thấy bài thi cấp độ." };
+
+  const isPractice = test?.type === "PRACTICE_EXAM";
+  const isFullLevel = test?.type === "FULL_LEVEL" && Boolean(test.level);
+
+  if (!test || (!isPractice && !isFullLevel)) {
+    return { ok: false, status: 404, reason: "Không tìm thấy bài thi." };
   }
 
-  const unlocked = await isLevelUnlocked(userId, test.level.number);
-  if (!unlocked) {
-    return {
-      ok: false,
-      status: 403,
-      reason: `Hoàn thành Level ${test.level.number - 1} để mở khóa.`,
-    };
+  if (isFullLevel && test.level) {
+    const unlocked = await isLevelUnlocked(userId, test.level.number);
+    if (!unlocked) {
+      return {
+        ok: false,
+        status: 403,
+        reason: `Hoàn thành Level ${test.level.number - 1} để mở khóa.`,
+      };
+    }
   }
 
   const activeOther = await prisma.testAttempt.findFirst({
     where: {
       userId,
       status: "IN_PROGRESS",
-      test: { type: "FULL_LEVEL" },
+      test: { type: isPractice ? "PRACTICE_EXAM" : "FULL_LEVEL" },
       NOT: { testId },
     },
   });
@@ -56,7 +62,9 @@ export async function canStartAttempt(
     return {
       ok: false,
       status: 409,
-      reason: "Bạn đang có một bài thi cấp độ khác đang diễn ra.",
+      reason: isPractice
+        ? "Bạn đang có một đề thi thử khác đang diễn ra."
+        : "Bạn đang có một bài thi cấp độ khác đang diễn ra.",
     };
   }
 

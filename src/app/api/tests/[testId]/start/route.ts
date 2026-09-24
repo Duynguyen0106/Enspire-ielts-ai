@@ -19,18 +19,31 @@ export async function POST(_req: Request, context: Ctx) {
     where: { id: testId },
     include: { level: true },
   });
-  const levelNumber = testMeta?.level?.number ?? 1;
-  const { requireEntitlement } = await import("@/lib/entitlements");
-  const gate = await requireEntitlement(user.id, "FULL_LEVEL_TEST", {
-    level: levelNumber,
-    consume: false,
-  });
-  if (!gate.allowed) {
-    return jsonError(gate.reason ?? "Paywall", 402, {
-      feature: "FULL_LEVEL_TEST",
-      remaining: gate.remaining,
-    });
+  if (!testMeta || !testMeta.publishedAt) {
+    return jsonError("Không tìm thấy bài thi.", 404);
   }
+
+  const isPractice = testMeta.type === "PRACTICE_EXAM";
+  if (!isPractice && testMeta.type !== "FULL_LEVEL") {
+    return jsonError("Không tìm thấy bài thi.", 404);
+  }
+
+  if (!isPractice) {
+    const levelNumber = testMeta.level?.number ?? 1;
+    const { requireEntitlement } = await import("@/lib/entitlements");
+    const gate = await requireEntitlement(user.id, "FULL_LEVEL_TEST", {
+      level: levelNumber,
+      consume: false,
+    });
+    if (!gate.allowed) {
+      return jsonError(gate.reason ?? "Paywall", 402, {
+        feature: "FULL_LEVEL_TEST",
+        remaining: gate.remaining,
+      });
+    }
+  }
+
+  const levelNumber = testMeta.level?.number ?? 1;
 
   const check = await canStartAttempt(user.id, testId);
   if (!check.ok) {

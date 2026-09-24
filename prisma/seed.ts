@@ -4,6 +4,7 @@ import { seedPlacement } from "./seed-placement";
 import { seedLessons } from "./seed-lessons";
 import { seedWritingContent } from "./seed-writing-prompts";
 import { seedFullTests } from "./seed-full-tests";
+import { seedPracticeExams } from "./seed-practice-exams";
 
 const prisma = new PrismaClient();
 
@@ -188,6 +189,7 @@ async function main() {
   // Full-level tests: seed Level 1 by default; use --full-tests for all 1–9
   const fullAll = process.argv.includes("--full-tests");
   await seedFullTests(fullAll ? null : 1);
+  await seedPracticeExams();
 }
 
 main()

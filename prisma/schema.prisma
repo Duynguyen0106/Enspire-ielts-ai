@@ -23,6 +23,8 @@ enum TestType {
   PLACEMENT
   FULL_LEVEL
   CHECKPOINT
+  /// Unofficial Academic mock exams (original content, IELTS-format practice)
+  PRACTICE_EXAM
 }
 
 enum AttemptStatus {

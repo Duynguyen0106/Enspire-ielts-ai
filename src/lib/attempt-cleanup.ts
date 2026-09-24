@@ -7,7 +7,7 @@ export async function markStaleAttemptsAbandoned(): Promise<number> {
   const result = await prisma.testAttempt.updateMany({
     where: {
       status: "IN_PROGRESS",
-      test: { type: "FULL_LEVEL" },
+      test: { type: { in: ["FULL_LEVEL", "PRACTICE_EXAM"] } },
       startedAt: { lt: cutoff },
     },
     data: {
@@ -26,7 +26,7 @@ export async function retryFailedScorings(maxRetries = 3): Promise<string[]> {
       scoringStatus: "FAILED",
       scoringRetries: { lt: maxRetries },
       submittedAt: { lt: cutoff },
-      test: { type: "FULL_LEVEL" },
+      test: { type: { in: ["FULL_LEVEL", "PRACTICE_EXAM"] } },
     },
     take: 20,
     select: { id: true },

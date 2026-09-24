@@ -20,6 +20,7 @@
     "db:seed:writing": "tsx prisma/seed-writing-prompts.ts",
     "db:seed:full-tests": "tsx prisma/seed-full-tests.ts",
     "db:seed:full-tests:l1": "tsx prisma/seed-full-tests.ts --level=1",
+    "db:seed:practice-exams": "tsx prisma/seed-practice-exams.ts",
     "db:push": "prisma db push",
     "postinstall": "prisma generate"
   },

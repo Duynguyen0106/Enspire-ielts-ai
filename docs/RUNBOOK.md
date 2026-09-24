@@ -68,3 +68,17 @@ pnpm db:seed
 ## Secrets — never log
 
 `OPENAI_API_KEY`, `STRIPE_SECRET_KEY`, `AUTH_SECRET`, `SENTRY_AUTH_TOKEN`, DB URLs.
+
+## Practice Academic mock exams
+
+Official Cambridge/BC/IDP past papers are copyrighted — do **not** import them.
+
+Seed original Academic-format mocks:
+
+```bash
+pnpm exec prisma migrate deploy
+pnpm db:seed:practice-exams
+```
+
+Students find them under **Bài kiểm tra → Đề thi thử Academic**. Links to free official sample tests are shown in-app.
+

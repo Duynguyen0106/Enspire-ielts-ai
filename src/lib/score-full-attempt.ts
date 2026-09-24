@@ -35,7 +35,13 @@ export async function scoreFullLevelAttempt(attemptId: string): Promise<void> {
   });
 
   if (!attempt) throw new Error("Attempt not found");
-  if (attempt.test.type !== "FULL_LEVEL") throw new Error("Not a full-level test");
+  if (
+    attempt.test.type !== "FULL_LEVEL" &&
+    attempt.test.type !== "PRACTICE_EXAM"
+  ) {
+    throw new Error("Not a full exam attempt");
+  }
+  const isPracticeExam = attempt.test.type === "PRACTICE_EXAM";
 
   // Idempotency: already scored
   if (attempt.scoringStatus === "SCORED" && attempt.status === "SCORED") {
@@ -244,7 +250,7 @@ export async function scoreFullLevelAttempt(attemptId: string): Promise<void> {
     } as Prisma.InputJsonValue;
 
     let unlockGranted = false;
-    if (passed) {
+    if (passed && !isPracticeExam && attempt.test.level) {
       if (levelNumber < 9) {
         await grantUnlock(attempt.userId, levelNumber + 1, "TEST_PASS");
         unlockGranted = true;
@@ -269,7 +275,7 @@ export async function scoreFullLevelAttempt(attemptId: string): Promise<void> {
       }
 
       const skills = ["LISTENING", "READING", "WRITING", "SPEAKING"] as const;
-      const level = attempt.test.level!;
+      const level = attempt.test.level;
       for (const skill of skills) {
         const skillRow = await prisma.skill.findUnique({
           where: { name: skill },
